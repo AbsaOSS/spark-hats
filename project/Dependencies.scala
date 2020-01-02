@@ -27,7 +27,7 @@ object Dependencies {
 
   val SparkHatsDependencies: Seq[ModuleID] = Seq(
     // compile
-    "za.co.absa"       %% "spark-hofs"       % sparkHofsVersion,
+    "za.co.absa" %% "spark-hofs" % sparkHofsVersion,
 
     // provided
     "org.apache.spark" %% "spark-core"       % sparkVersion % Provided,

@@ -31,6 +31,7 @@ class DeepArrayErrorTransformationSuite extends FunSuite with SparkTestBase {
   // scalastyle:off null
 
   import spark.implicits._
+  import za.co.absa.spark.hats.Extensions._
   implicit val _: SampleErrorUDFs = new SampleErrorUDFs
 
   private val log = LoggerFactory.getLogger(this.getClass)
@@ -877,7 +878,7 @@ class DeepArrayErrorTransformationSuite extends FunSuite with SparkTestBase {
     }.getMessage contains "Output field cannot be empty")
 
     assert(intercept[IllegalArgumentException] {
-      NestedArrayTransformations.nestedAddColumn(df, "value", lit("foo")).printSchema()
+      df.nestedWithColumn("value", lit("foo")).printSchema()
     }.getMessage contains "The column 'value' already exists")
 
   }
