@@ -44,10 +44,10 @@ object NestedArrayTransformations {
     * @param expression       A function that applies a transformation to a column as a Spark expression.
     * @return A dataframe with a new field that contains transformed values.
     */
-  def nestedWithColumnMap(df: DataFrame,
-                          inputColumnName: String,
-                          outputColumnName: String,
-                          expression: TransformFunction): DataFrame = {
+  private[hats] def nestedWithColumnMap(df: DataFrame,
+                                        inputColumnName: String,
+                                        outputColumnName: String,
+                                        expression: TransformFunction): DataFrame = {
     nestedWithColumnMapHelper(df, inputColumnName, outputColumnName, Some(expression))._1
   }
 
@@ -107,11 +107,11 @@ object NestedArrayTransformations {
     * @param expression       A function that applies a transformation to a column as a Spark expression
     * @return A dataframe with a new field that contains transformed values.
     */
-  def nestedStructMap(df: DataFrame,
-                      inputStructField: String,
-                      outputChildField: String,
-                      expression: TransformFunction
-                     ): DataFrame = {
+  private[hats] def nestedStructMap(df: DataFrame,
+                                    inputStructField: String,
+                                    outputChildField: String,
+                                    expression: TransformFunction
+                                   ): DataFrame = {
     val updatedStructField = if (inputStructField.nonEmpty) inputStructField + ".*" else ""
     nestedWithColumnMap(df, updatedStructField, outputChildField, expression)
   }
@@ -175,9 +175,9 @@ object NestedArrayTransformations {
     * @param expression    A new column value
     * @return A dataframe with a new field that contains transformed values.
     */
-  def nestedAddColumn(df: DataFrame,
-                      newColumnName: String,
-                      expression: Column): DataFrame = {
+  private[hats] def nestedAddColumn(df: DataFrame,
+                                    newColumnName: String,
+                                    expression: Column): DataFrame = {
     try {
       nestedWithColumnMapHelper(df, newColumnName, "", Some(_ => expression), None)._1
     } catch {
@@ -195,8 +195,8 @@ object NestedArrayTransformations {
     * @param columnToDrop A column name to be dropped
     * @return A dataframe with a new field that contains transformed values.
     */
-  def nestedDropColumn(df: DataFrame,
-                       columnToDrop: String): DataFrame = {
+  private[hats] def nestedDropColumn(df: DataFrame,
+                                     columnToDrop: String): DataFrame = {
     nestedWithColumnMapHelper(df, columnToDrop, "")._1
   }
 
@@ -234,12 +234,12 @@ object NestedArrayTransformations {
     * @param errorCondition   A function that should check error conditions and return an error column in case such conditions are met
     * @return A pair consisting of a dataframe with a new field that contains transformed values and a string containing the error column name.
     */
-  private def nestedWithColumnMapHelper(df: DataFrame,
-                                        inputColumnName: String,
-                                        outputColumnName: String,
-                                        expression: Option[TransformFunction] = None,
-                                        errorCondition: Option[TransformFunction] = None
-                                       ): (DataFrame, String) = {
+  private[hats] def nestedWithColumnMapHelper(df: DataFrame,
+                                              inputColumnName: String,
+                                              outputColumnName: String,
+                                              expression: Option[TransformFunction] = None,
+                                              errorCondition: Option[TransformFunction] = None
+                                             ): (DataFrame, String) = {
     // The name of the field is the last token of outputColumnName
     val outputFieldName = outputColumnName.split('.').last
     var errorColumnName = ""
@@ -374,7 +374,7 @@ object NestedArrayTransformations {
       })
 
       if (isLeaf) {
-        if (inputColumnName=="") {
+        if (inputColumnName == "") {
           // A transformation is requested on the root level of the schema as a struct field (nestedStructAndErrorMap(...))
           handleStructLevelMap()
         } else if (!fieldFound) {
@@ -639,7 +639,7 @@ object NestedArrayTransformations {
 
   /** Adds a column similar to df.withColumn(), but you can specify the position of the new column by specifying
     * a column name after which to add the new column */
-  def addColumnAfter(df: DataFrame, afterColumn: String, columnName: String, expr: Column): DataFrame = {
+  private def addColumnAfter(df: DataFrame, afterColumn: String, columnName: String, expr: Column): DataFrame = {
     df.select(df.columns.flatMap(c => {
       if (c == afterColumn) {
         Seq(
