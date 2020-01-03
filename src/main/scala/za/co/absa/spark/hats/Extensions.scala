@@ -85,7 +85,7 @@ object Extensions {
       * Here is an example demonstrating how to handle both root and nested cases:
       *
       * {{{
-      * val dfOut = df.nestedStructMap(columnPath, "combinedField", c => {
+      * val dfOut = df.nestedMapStruct(columnPath, "combinedField", c => {
       * if (c==null) {
       *   // The columns are at the root level
       *   concat(col("city"), col("street"))
@@ -101,7 +101,7 @@ object Extensions {
       * @param expression       A function that applies a transformation to a column as a Spark expression
       * @return A dataframe with a new field that contains transformed values.
       */
-    def nestedStructMap(inputStructField: String,
+    def nestedMapStruct(inputStructField: String,
                         outputChildField: String,
                         expression: TransformFunction
                        ): DataFrame = {
