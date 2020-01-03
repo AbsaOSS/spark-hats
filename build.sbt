@@ -27,7 +27,7 @@ ThisBuild / crossScalaVersions := Seq(scala211, scala212)
 // Scala shouldn't be packaged so it is explicitly added as a provided dependency below
 ThisBuild / autoScalaLibrary := false
 
-lazy val hofs = (project in file("."))
+lazy val hats = (project in file("."))
   .settings(
     name := "spark-hats",
     libraryDependencies ++= SparkHatsDependencies :+ getScalaDependency(scalaVersion.value),
