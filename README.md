@@ -13,6 +13,8 @@
     limitations under the License.
 
 # spark-hats
+
+Spark **H**elpers for **A**rray **T**ransformation**s**"
 This library extends Spark DataFrame API with helpers for transforming fields inside nested structures and arrays of
 arbitrary levels of nesting.
 
