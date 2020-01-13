@@ -79,7 +79,7 @@ scala> df.show(false)
 The **nestedWithColumn** method allows adding new fields inside nested structures and arrays.
 
 ```scala
-scala> df.nestedWithColumn("my_array.c", lit("hello")).printSchema
+scala> df.nestedWithColumn(newColumnName = "my_array.c", expression = lit("hello")).printSchema
 root
  |-- id: long (nullable = true)
  |-- my_array: array (nullable = true)
@@ -88,7 +88,7 @@ root
  |    |    |-- b: string (nullable = true)
  |    |    |-- c: string (nullable = false)
 
-scala> df.nestedWithColumn("my_array.c", lit("hello")).show(false)
+scala> df.nestedWithColumn(newColumnName = "my_array.c", expression = lit("hello")).show(false)
 +---+---------------------------------------------------+
 |id |my_array                                           |
 +---+---------------------------------------------------+
@@ -121,13 +121,12 @@ scala> df.nestedDropColumn("my_array.b").show(false)
 ### Map a column
 
 The **nestedMapColumn** method applies a transformation on a nested field. If the input column is a primitive field the
-method will add outputColumnName at the same level of nesting by executing the `expression` passing the source column
-into it. If a struct column is expected you can use `.getField(...)` method to operate on its children.
+method will add `outputColumnName` at the same level of nesting. If a struct column is expected you can use `.getField(...)` method to operate on its children.
 
 The output column name can omit the full path as the field will be created at the same level of nesting as the input column.
 
 ```scala
-scala> df.nestedMapColumn("my_array.a", "c", a => a + 1).printSchema
+scala> df.nestedMapColumn(inputColumnName = "my_array.a", outputColumnName = "c", expression = a => a + 1).printSchema
 root
  |-- id: long (nullable = true)
  |-- my_array: array (nullable = true)
@@ -136,7 +135,7 @@ root
  |    |    |-- b: string (nullable = true)
  |    |    |-- c: long (nullable = true)
 
-scala> df.nestedMapColumn("my_array.a", "c", a => a + 1).show(false)
+scala> df.nestedMapColumn(inputColumnName = "my_array.a", outputColumnName = "c", expression = a => a + 1).show(false)
 +---+---------------------------------------+
 |id |my_array                               |
 +---+---------------------------------------+
@@ -148,13 +147,14 @@ scala> df.nestedMapColumn("my_array.a", "c", a => a + 1).show(false)
 ### Map a struct column
 
 The **nestedMapStruct** method applies a transformation on a nested struct that can be inside an array. Given a struct
-field the method creates a new child field of that struct as a transformation of struct fields. This is useful for
-transformations such as concatenation of fields.
+field the method creates a new child field in that struct. This is useful for transformations such as concatenation of
+fields.
 
-The lambda function receives a struct field as an argument. To access child fields use `.getField(fieldName)`. For example, 
+The lambda function receives a struct field as an argument. To access child fields use `.getField(fieldName)`. For example: 
 
 ```scala
-scala> df.nestedMapStruct("my_array", "c", s => concat(s.getField("b"), s.getField("a").cast("string")) ).printSchema
+scala> df.nestedMapStruct(inputStructField = "my_array", outputChildField = "c", expression = s =>
+    concat(s.getField("b"), s.getField("a").cast("string")) ).printSchema
 root
  |-- id: long (nullable = true)
  |-- my_array: array (nullable = true)
@@ -163,7 +163,8 @@ root
  |    |    |-- b: string (nullable = true)
  |    |    |-- c: string (nullable = true)
 
-scala> df.nestedMapStruct("my_array", "c", s => concat(s.getField("b"), s.getField("a").cast("string")) ).show(false)
+scala> df.nestedMapStruct(inputStructField = "my_array", outputChildField = "c", expression = s =>
+    concat(s.getField("b"), s.getField("a").cast("string")) ).show(false)
 +---+------------------------------------------------+
 |id |my_array                                        |
 +---+------------------------------------------------+
@@ -172,13 +173,13 @@ scala> df.nestedMapStruct("my_array", "c", s => concat(s.getField("b"), s.getFie
 +---+------------------------------------------------+
 ```
 
-The function can be generically used for applying transformation to a schema root since schema root is also a struct.
-To use root of the schema as the input struct pass "" as the input column name.
+The function can be generically used for applying a transformation to a schema root since schema root is also a struct.
+To use root of the schema as the input struct pass `""` as the input column name.
 In this case `null` will be passed to the lambda function.
 
 To generically handle root and nested cases a null check should be done inside the lambda function:
 ```scala
-val dfOut = df.nestedMapStruct(columnPath, "combinedField", s => {
+val dfOut = df.nestedMapStruct(inputStructField = columnPath, outputChildField = "combinedField", s => {
 if (s == null) {
   // The columns are at the root level
   concat(col("city"), col("street"))
