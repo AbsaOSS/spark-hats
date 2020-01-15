@@ -26,6 +26,8 @@ object Extensions {
 
   type TransformFunction = Column => Column
 
+  type ExtendedTransformFunction = (String => Column) => Column
+
   /**
     * The class represents an extension wrapper for an [[org.apache.spark.sql.DataFrame]].
     *
@@ -34,7 +36,7 @@ object Extensions {
   implicit class DataFrameExtension(dataset: Dataset[Row]) {
 
     /**
-      * Add a column that can be inside nested structs, arrays and its combinations
+      * Add a column that can be inside nested structs, arrays and its combinations.
       *
       * @param newColumnName A column name to be created
       * @param expression    A new column value
@@ -43,6 +45,19 @@ object Extensions {
     def nestedWithColumn(newColumnName: String,
                          expression: Column): Dataset[Row] = {
       NestedArrayTransformations.nestedAddColumn(dataset, newColumnName, expression)
+    }
+
+    /**
+      * Add a column that can be inside nested structs, arrays and its combinations.
+      *
+      * @param newColumnName A column name to be created
+      * @param expression    A new column value
+      * @return A dataframe with a new field that contains transformed values.
+      */
+    def nestedWithColumnExtended(newColumnName: String,
+                         expression: ExtendedTransformFunction): Dataset[Row] = {
+      NestedArrayTransformations.nestedAddColumnExtended(dataset, newColumnName,
+        (_, getFieldFunction) => expression(getFieldFunction))
     }
 
     /**
@@ -73,39 +88,6 @@ object Extensions {
                         outputColumnName: String,
                         expression: TransformFunction): DataFrame = {
       NestedArrayTransformations.nestedWithColumnMap(dataset, inputColumnName, outputColumnName, expression)
-    }
-
-    /**
-      * A nested struct map. Given a struct field the method will create a new child field of that struct as a
-      * transformation of struct fields. This is useful for transformations such as concatenation of fields.
-      *
-      * To use root of the schema as the input struct pass "" as the `inputStructField`.
-      * In this case `null` will be passed to the lambda function.
-      *
-      * Here is an example demonstrating how to handle both root and nested cases:
-      *
-      * {{{
-      * val dfOut = df.nestedMapStruct(columnPath, "combinedField", c => {
-      * if (c==null) {
-      *   // The columns are at the root level
-      *   concat(col("city"), col("street"))
-      * } else {
-      *   // The columns are inside nested structs/arrays
-      *   concat(c.getField("city"), c.getField("street"))
-      * }
-      * })
-      * }}}
-      *
-      * @param inputStructField A struct column name for which to apply the transformation
-      * @param outputChildField The output column name that will be added as a child of the source struct.
-      * @param expression       A function that applies a transformation to a column as a Spark expression
-      * @return A dataframe with a new field that contains transformed values.
-      */
-    def nestedMapStruct(inputStructField: String,
-                        outputChildField: String,
-                        expression: TransformFunction
-                       ): DataFrame = {
-      NestedArrayTransformations.nestedStructMap(dataset, inputStructField, outputChildField, expression)
     }
 
   }
