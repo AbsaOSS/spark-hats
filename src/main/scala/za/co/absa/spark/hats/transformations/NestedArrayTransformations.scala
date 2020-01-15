@@ -27,7 +27,11 @@ import scala.util.control.NonFatal
 
 object NestedArrayTransformations {
 
+  type GetFieldFunction = String => Column
+
   type TransformFunction = Column => Column
+
+  type ExtendedTransformFunction = (Column, GetFieldFunction) => Column
 
   /**
     * Map transformation for columns that can be inside nested structs, arrays and its combinations.
@@ -44,11 +48,11 @@ object NestedArrayTransformations {
     * @param expression       A function that applies a transformation to a column as a Spark expression.
     * @return A dataframe with a new field that contains transformed values.
     */
-  private[hats] def nestedWithColumnMap(df: DataFrame,
-                                        inputColumnName: String,
-                                        outputColumnName: String,
-                                        expression: TransformFunction): DataFrame = {
-    nestedWithColumnMapHelper(df, inputColumnName, outputColumnName, Some(expression))._1
+  def nestedWithColumnMap(df: DataFrame,
+                          inputColumnName: String,
+                          outputColumnName: String,
+                          expression: TransformFunction): DataFrame = {
+    nestedWithColumnMapHelper(df, inputColumnName, outputColumnName, Some(toExtendedTransformation(expression)))._1
   }
 
   /**
@@ -57,6 +61,7 @@ object NestedArrayTransformations {
     * @param df               Dataframe to be transformed
     * @param inputColumnName  A column name for which to apply the transformation, e.g. `company.employee.firstName`.
     * @param outputColumnName The output column name. The path is optional, e.g. you can use `conformedName` instead of `company.employee.conformedName`.
+    * @param errorColumnName  The name of the error column.
     * @param expression       A function that applies a transformation to a column as a Spark expression.
     * @param errorCondition   A function that takes an input column and returns an expression for an error column.
     * @return A dataframe with a new field that contains transformed values.
@@ -69,13 +74,41 @@ object NestedArrayTransformations {
                                   errorCondition: TransformFunction
                                  ): DataFrame = {
 
-    if (errorColumnName.contains('.')) {
-      throw new IllegalArgumentException(s"Error columns should be at the root schema level. " +
-        s"Value '$errorColumnName' is not valid.")
-    }
+    validateErrorColumnName(errorColumnName)
 
     val (dfOut: DataFrame, deepErrorColumn: String) =
-      nestedWithColumnMapHelper(df, inputColumnName, outputColumnName, Some(expression), Some(errorCondition))
+      nestedWithColumnMapHelper(df, inputColumnName, outputColumnName, Some(toExtendedTransformation(expression)),
+        Some(toExtendedTransformation(errorCondition)))
+
+    gatherErrors(dfOut, deepErrorColumn, errorColumnName)
+  }
+
+  /**
+    * A nested map that also appends errors to the error column and uses an extended transformation function that
+    * provides the ability to use fields in parent level of nesting.
+    * (see [[NestedArrayTransformations.nestedWithColumnMap]] above for the usage)
+    *
+    * @param df               Dataframe to be transformed
+    * @param inputColumnName  A column name for which to apply the transformation, e.g. `company.employee.firstName`.
+    * @param outputColumnName The output column name. The path is optional, e.g. you can use `conformedName` instead of `company.employee.conformedName`.
+    * @param errorColumnName  The name of the error column.
+    * @param expression       A function that applies a transformation to a column as a Spark expression.
+    * @param errorCondition   A function that takes an input column and returns an expression for an error column.
+    * @return A dataframe with a new field that contains transformed values.
+    */
+  def nestedExtendedWithColumnAndErrorMap(df: DataFrame,
+                                          inputColumnName: String,
+                                          outputColumnName: String,
+                                          errorColumnName: String,
+                                          expression: ExtendedTransformFunction,
+                                          errorCondition: ExtendedTransformFunction
+                                         ): DataFrame = {
+
+    validateErrorColumnName(errorColumnName)
+
+    val (dfOut: DataFrame, deepErrorColumn: String) =
+      nestedWithColumnMapHelper(df, inputColumnName, outputColumnName, Some(expression),
+        Some(errorCondition))
 
     gatherErrors(dfOut, deepErrorColumn, errorColumnName)
   }
@@ -107,13 +140,43 @@ object NestedArrayTransformations {
     * @param expression       A function that applies a transformation to a column as a Spark expression
     * @return A dataframe with a new field that contains transformed values.
     */
-  private[hats] def nestedStructMap(df: DataFrame,
-                                    inputStructField: String,
-                                    outputChildField: String,
-                                    expression: TransformFunction
-                                   ): DataFrame = {
-    val updatedStructField = if (inputStructField.nonEmpty) inputStructField + ".*" else ""
+  def nestedStructMap(df: DataFrame,
+                      inputStructField: String,
+                      outputChildField: String,
+                      expression: TransformFunction
+                     ): DataFrame = {
+    val updatedStructField = toStructNotation(inputStructField)
     nestedWithColumnMap(df, updatedStructField, outputChildField, expression)
+  }
+
+  /**
+    * A nested struct map. Given a struct field the method will create a new child field of that struct as a
+    * transformation of struct fields. This is useful for transformations such as concatenation of fields.
+    * The method uses extended transformation functions so the caller can access all parent fields as well.
+    *
+    * Here is an example demonstrating how to handle both root and nested cases:
+    *
+    * {{{
+    * val dfOut = nestedStructMap(df, columnPath, "people.combinedField", (_, getField) => {
+    *   // A root lelev field 'id' is concatenated with the full name field of an array of people.
+    *   concat(getField("id"), lit(" "), getField("people.full_name"))
+    * }
+    * })
+    * }}}
+    *
+    * @param df               An input DataFrame
+    * @param inputStructField A struct column name for which to apply the transformation
+    * @param outputChildField The output column name that will be added as a child of the input struct.
+    * @param expression       A function that applies a transformation to a column as a Spark expression
+    * @return A dataframe with a new field that contains transformed values.
+    */
+  def nestedExtendedStructMap(df: DataFrame,
+                              inputStructField: String,
+                              outputChildField: String,
+                              expression: ExtendedTransformFunction
+                             ): DataFrame = {
+    val updatedStructField = toStructNotation(inputStructField)
+    nestedWithColumnMapHelper(df, updatedStructField, outputChildField, Some(expression))._1
   }
 
   /**
@@ -151,7 +214,7 @@ object NestedArrayTransformations {
     * @param df               An input DataFrame
     * @param inputStructField A struct column name for which to apply the transformation
     * @param outputChildField The output column name that will be added as a child of the source struct.
-    * @param errorColumnName  An error column name
+    * @param errorColumnName  The name of the error column.
     * @param expression       A function that applies a transformation to a column as a Spark expression
     * @param errorCondition   A function that should check error conditions and return an error column in case such conditions are met
     * @return A dataframe with a new field that contains transformed values.
@@ -163,8 +226,47 @@ object NestedArrayTransformations {
                               expression: TransformFunction,
                               errorCondition: TransformFunction
                              ): DataFrame = {
-    val updatedStructField = if (inputStructField.nonEmpty) inputStructField + ".*" else ""
+    val updatedStructField = toStructNotation(inputStructField)
     nestedWithColumnAndErrorMap(df, updatedStructField, outputChildField, errorColumnName, expression, errorCondition)
+  }
+
+  /**
+    * A nested struct map with error column support. Given a struct field the method will create a new child field of that
+    * struct as a transformation of struct fields and will update the error column according to a specified transformation.
+    * This is useful for transformations that require combining several fields of a struct in an array.
+    * Extended transformation functions are used so that the caller can access any field in the array path.
+    *
+    * Here is an example demonstrating how to handle both root and nested cases:
+    *
+    * {{{
+    * val dfOut = nestedStructAndErrorMap(df, columnPath, "people.addresses.combinedField", (_, getField) => {
+    *   // Struct transformation
+    *   concat(getField("id"), getField("people.addresses.city"), getField("people.first_name"))
+    * }
+    * }, (_, getField) => {
+    *   // Error column transformation
+    *   if (isError(getField("people.addresses.city") ErrorCaseClsss("Some error") else null
+    * }
+    * })
+    * }}}
+    *
+    * @param df               An input DataFrame
+    * @param inputStructField A struct column name for which to apply the transformation
+    * @param outputChildField The output column name that will be added as a child of the source struct.
+    * @param errorColumnName  The name of the error column.
+    * @param expression       A function that applies a transformation to a column as a Spark expression
+    * @param errorCondition   A function that should check error conditions and return an error column in case such conditions are met
+    * @return A dataframe with a new field that contains transformed values.
+    */
+  def nestedExtendedStructAndErrorMap(df: DataFrame,
+                                      inputStructField: String,
+                                      outputChildField: String,
+                                      errorColumnName: String,
+                                      expression: ExtendedTransformFunction,
+                                      errorCondition: ExtendedTransformFunction
+                                     ): DataFrame = {
+    val updatedStructField = toStructNotation(inputStructField)
+    nestedExtendedWithColumnAndErrorMap(df, updatedStructField, outputChildField, errorColumnName, expression, errorCondition)
   }
 
   /**
@@ -175,11 +277,11 @@ object NestedArrayTransformations {
     * @param expression    A new column value
     * @return A dataframe with a new field that contains transformed values.
     */
-  private[hats] def nestedAddColumn(df: DataFrame,
-                                    newColumnName: String,
-                                    expression: Column): DataFrame = {
+  def nestedAddColumn(df: DataFrame,
+                      newColumnName: String,
+                      expression: Column): DataFrame = {
     try {
-      nestedWithColumnMapHelper(df, newColumnName, "", Some(_ => expression), None)._1
+      nestedWithColumnMapHelper(df, newColumnName, "", Some((_, _) => expression), None)._1
     } catch {
       case e: IllegalArgumentException if e.getMessage.contains("Output field cannot be empty") =>
         throw new IllegalArgumentException(s"The column '$newColumnName' already exists.", e)
@@ -195,8 +297,8 @@ object NestedArrayTransformations {
     * @param columnToDrop A column name to be dropped
     * @return A dataframe with a new field that contains transformed values.
     */
-  private[hats] def nestedDropColumn(df: DataFrame,
-                                     columnToDrop: String): DataFrame = {
+  def nestedDropColumn(df: DataFrame,
+                       columnToDrop: String): DataFrame = {
     nestedWithColumnMapHelper(df, columnToDrop, "")._1
   }
 
@@ -234,12 +336,12 @@ object NestedArrayTransformations {
     * @param errorCondition   A function that should check error conditions and return an error column in case such conditions are met
     * @return A pair consisting of a dataframe with a new field that contains transformed values and a string containing the error column name.
     */
-  private[hats] def nestedWithColumnMapHelper(df: DataFrame,
-                                              inputColumnName: String,
-                                              outputColumnName: String,
-                                              expression: Option[TransformFunction] = None,
-                                              errorCondition: Option[TransformFunction] = None
-                                             ): (DataFrame, String) = {
+  private def nestedWithColumnMapHelper(df: DataFrame,
+                                        inputColumnName: String,
+                                        outputColumnName: String,
+                                        expression: Option[ExtendedTransformFunction] = None,
+                                        errorCondition: Option[ExtendedTransformFunction] = None
+                                       ): (DataFrame, String) = {
     // The name of the field is the last token of outputColumnName
     val outputFieldName = outputColumnName.split('.').last
     var errorColumnName = ""
@@ -262,10 +364,12 @@ object NestedArrayTransformations {
       }
     }
 
-    def addErrorColumn(schema: Option[StructType], column: Column): Option[Column] = {
+    def addErrorColumn(schema: Option[StructType],
+                       column: Column,
+                       arrCtx: ArrayContext): Option[Column] = {
       errorCondition.map(errorCond => {
         errorColumnName = SchemaUtils.getUniqueName("errorList", schema)
-        val errorColumn = array(errorCond(column)).as(errorColumnName)
+        val errorColumn = array(errorCond(column, arrCtx.getField)).as(errorColumnName)
         if (inputColumnName.contains('.')) {
           val parent = inputColumnName.split('.').dropRight(1).mkString(".")
           errorColumnName = s"$parent.$errorColumnName"
@@ -275,7 +379,11 @@ object NestedArrayTransformations {
     }
 
     // Handle the case when the input column is inside a nested struct
-    def mapStruct(schema: StructType, path: Seq[String], parentColumn: Option[Column] = None): Seq[Column] = {
+    def mapStruct(schema: StructType,
+                  path: Seq[String],
+                  parentPath: String,
+                  arrCtx: ArrayContext,
+                  parentColumn: Option[Column] = None): Seq[Column] = {
       val mappedFields = new ListBuffer[Column]()
 
       def handleStructLevelMap(): Unit = {
@@ -286,8 +394,8 @@ object NestedArrayTransformations {
           case Some(exp) =>
             val parentField = parentColumn.orNull
             ensureOutputColumnNonEmpty()
-            mappedFields += exp(parentField).as(outputFieldName)
-            addErrorColumn(Some(schema), parentField).foreach(mappedFields += _)
+            mappedFields += exp(parentField, arrCtx.getField).as(outputFieldName)
+            addErrorColumn(Some(schema), parentField, arrCtx).foreach(mappedFields += _)
         }
       }
 
@@ -297,7 +405,7 @@ object NestedArrayTransformations {
             throw new IllegalArgumentException("An expression must be specified if addition of a new field is " +
               s"requested ($inputColumnName).")
           case Some(exp) =>
-            mappedFields += exp(null).as(newFieldName)
+            mappedFields += exp(null, arrCtx.getField).as(newFieldName)
         }
       }
 
@@ -312,7 +420,11 @@ object NestedArrayTransformations {
         }
       }
 
-      def handleMatchedLeaf(field: StructField, curColumn: Column): Seq[Column] = {
+      def handleMatchedLeaf(field: StructField,
+                            curColumn: Column,
+                            parentPath: String,
+                            arrCtx: ArrayContext
+                           ): Seq[Column] = {
         expression match {
           case None =>
             // Drops the column if the expression is not specified
@@ -320,11 +432,11 @@ object NestedArrayTransformations {
           case Some(exp) =>
             field.dataType match {
               case dt: ArrayType =>
-                mapArray(dt, path, parentColumn)
+                mapArray(dt, path, parentPath, arrCtx, parentColumn)
               case _ =>
                 ensureOutputColumnNonEmpty()
-                val newColumn = exp(curColumn).as(outputFieldName)
-                addErrorColumn(Some(schema), curColumn).foreach(mappedFields += _)
+                val newColumn = exp(curColumn, arrCtx.getField).as(outputFieldName)
+                addErrorColumn(Some(schema), curColumn, arrCtx).foreach(mappedFields += _)
                 if (replaceExistingColumn) {
                   Seq(newColumn)
                 } else {
@@ -335,24 +447,33 @@ object NestedArrayTransformations {
         }
       }
 
-      def handleMatchedNonLeaf(field: StructField, curColumn: Column): Seq[Column] = {
+      def handleMatchedNonLeaf(field: StructField,
+                               curColumn: Column,
+                               parentPath: String,
+                               arrCtx: ArrayContext
+                              ): Seq[Column] = {
         // Non-leaf columns need to be further processed recursively
         field.dataType match {
-          case dt: StructType => Seq(struct(mapStruct(dt, path.tail, Some(curColumn)): _*).as(field.name))
-          case dt: ArrayType => mapArray(dt, path, parentColumn)
+          case dt: StructType => Seq(struct(mapStruct(dt, path.tail, parentPath, arrCtx, Some(curColumn)): _*).as(field.name))
+          case dt: ArrayType => mapArray(dt, path, parentPath, arrCtx, parentColumn)
           case _ => throw new IllegalArgumentException(s"Field '${field.name}' is not a struct type or an array.")
         }
       }
 
-      def handleMatchedField(field: StructField, curColumn: Column, isLeaf: Boolean): Seq[Column] = {
+      def handleMatchedField(field: StructField,
+                             curColumn: Column,
+                             parentPath: String,
+                             arrCtx: ArrayContext,
+                             isLeaf: Boolean): Seq[Column] = {
         if (isLeaf) {
-          handleMatchedLeaf(field, curColumn)
+          handleMatchedLeaf(field, curColumn, parentPath, arrCtx)
         } else {
-          handleMatchedNonLeaf(field, curColumn)
+          handleMatchedNonLeaf(field, curColumn, parentPath, arrCtx)
         }
       }
 
       val fieldName = path.head
+      val fieldPath = if (parentPath.isEmpty) fieldName else s"$parentPath.$fieldName"
       val isLeaf = isLeafElement(path)
       var fieldFound = false
 
@@ -369,12 +490,12 @@ object NestedArrayTransformations {
         } else {
           // We have found a match
           fieldFound = true
-          handleMatchedField(field, curColumn, isLeaf)
+          handleMatchedField(field, curColumn, fieldPath, arrCtx, isLeaf)
         }
       })
 
       if (isLeaf) {
-        if (inputColumnName == "") {
+        if (inputColumnName=="") {
           // A transformation is requested on the root level of the schema as a struct field (nestedStructAndErrorMap(...))
           handleStructLevelMap()
         } else if (!fieldFound) {
@@ -387,8 +508,10 @@ object NestedArrayTransformations {
 
     // Handle arrays (including arrays of arrays) of primitives
     // The output column will also be an array, not an additional element of the existing array
-    def mapNestedArrayOfPrimitives(schema: ArrayType, expr: TransformFunction,
-                                   doFlatten: Boolean = false): TransformFunction = {
+    def mapNestedArrayOfPrimitives(schema: ArrayType, expr: ExtendedTransformFunction,
+                                   parentPath: String,
+                                   arrCtx: ArrayContext,
+                                   doFlatten: Boolean = false): ExtendedTransformFunction = {
       val lambdaName = getLambdaName
       val elemType = schema.elementType
 
@@ -396,19 +519,23 @@ object NestedArrayTransformations {
         case _: StructType =>
           throw new IllegalArgumentException(s"Unexpected usage of mapNestedArrayOfPrimitives() on structs.")
         case dt: ArrayType =>
-          val innerArray = mapNestedArrayOfPrimitives(dt, expr, doFlatten)
+          val innerArray = mapNestedArrayOfPrimitives(dt, expr, parentPath, arrCtx, doFlatten)
           if (doFlatten) {
-            x => flatten(transform(x, innerArray, lambdaName))
+            (x, gf) => flatten(transform(x, innerArray(_, gf), lambdaName))
           } else {
-            x => transform(x, innerArray, lambdaName)
+            (x, gf) => transform(x, innerArray(_, gf), lambdaName)
           }
-        case dt =>
-          x => transform(x, InnerX => expr(InnerX), lambdaName)
+        case _ =>
+          (x, _) => transform(x, InnerX => expr(InnerX, arrCtx.withArraysUpdated(parentPath, x).getField), lambdaName)
       }
     }
 
     // Handle the case when the input column is inside a nested array
-    def mapArray(schema: ArrayType, path: Seq[String], parentColumn: Option[Column] = None,
+    def mapArray(schema: ArrayType,
+                 path: Seq[String],
+                 parentPath: String,
+                 arrCtx: ArrayContext,
+                 parentColumn: Option[Column] = None,
                  isParentArray: Boolean = false): Seq[Column] = {
       val isLeaf = isLeafElement(path)
       val lambdaName = getLambdaName
@@ -423,14 +550,18 @@ object NestedArrayTransformations {
 
       // For an error column created by transforming arrays of primitives the error column will be created at
       // the same level as the array. The error column will contain errors from all elements of the processed array
-      def handleErrorColumnOfArraysOfPrimitives(errorExpression: Option[TransformFunction],
+      def handleErrorColumnOfArraysOfPrimitives(errorExpression: Option[ExtendedTransformFunction],
+                                                parentPath: String,
+                                                arrCtx: ArrayContext,
                                                 doFlatten: Boolean): Unit = {
         errorExpression.map(errorExpr => {
           errorColumnName = SchemaUtils.getUniqueName("errorList", None)
           val errorColumn = if (doFlatten) {
-            flatten(transform(curColumn, x => errorExpr(x), lambdaName)).as(errorColumnName)
+            flatten(transform(curColumn, x =>
+              errorExpr(x, arrCtx.withArraysUpdated(parentPath, x).getField), lambdaName)).as(errorColumnName)
           } else {
-            transform(curColumn, x => errorExpr(x), lambdaName).as(errorColumnName)
+            transform(curColumn, x =>
+              errorExpr(x, arrCtx.withArraysUpdated(parentPath, x).getField), lambdaName).as(errorColumnName)
           }
           if (inputColumnName.contains('.')) {
             val parent = inputColumnName.split('.').dropRight(1).mkString(".")
@@ -441,8 +572,10 @@ object NestedArrayTransformations {
       }
 
       // Handles primitive data types as well as nested arrays of primitives
-      def handlePrimitive(dt: DataType, transformExpression: Option[TransformFunction],
-                          errorExpression: Option[TransformFunction],
+      def handlePrimitive(dt: DataType, transformExpression: Option[ExtendedTransformFunction],
+                          errorExpression: Option[ExtendedTransformFunction],
+                          parentPath: String,
+                          arrCtx: ArrayContext,
                           doFlatten: Boolean = false): Column = {
         if (isLeaf) {
           transformExpression match {
@@ -452,10 +585,11 @@ object NestedArrayTransformations {
             case Some(exp) =>
               // Retain the original column
               ensureOutputColumnNonEmpty()
-              mappedFields += transform(curColumn, x => exp(x), lambdaName).as(outputFieldName)
+              mappedFields += transform(curColumn, x =>
+                exp(x, arrCtx.withArraysUpdated(parentPath, x).getField), lambdaName).as(outputFieldName)
 
               // Handle error column for arrays of primitives
-              handleErrorColumnOfArraysOfPrimitives(errorExpression, doFlatten)
+              handleErrorColumnOfArraysOfPrimitives(errorExpression, parentPath, arrCtx, doFlatten)
               curColumn
           }
         } else {
@@ -466,7 +600,9 @@ object NestedArrayTransformations {
         }
       }
 
-      def handleNestedArray(dt: ArrayType): Column = {
+      def handleNestedArray(dt: ArrayType,
+                            parentPath: String,
+                            arrCtx: ArrayContext): Column = {
         // This is the case when the input field is a several nested arrays of arrays of...
         // Each level of array nesting needs to be dealt with using transform()
         val deepestType = SchemaUtils.getDeepestArrayType(dt)
@@ -476,7 +612,7 @@ object NestedArrayTransformations {
             // as a field of that struct
             // Example: if 'persons' is an array of array of structs having firstName and lastName,
             //          fields, then 'conformedFirstName' needs to be a new field inside the struct
-            val innerArray = (x: Column) => mapArray(dt, path, Some(x), isParentArray = true)
+            val innerArray = (x: Column) => mapArray(dt, path, parentPath, arrCtx, Some(x), isParentArray = true)
             transform(curColumn, c => innerArray(c).head, lambdaName).as(fieldName)
           case _ =>
             // If at the bottom of the array nesting is a primitive we need to add the new column
@@ -484,35 +620,38 @@ object NestedArrayTransformations {
             // Example: if 'persons' is an array of array of string the output field,
             //          say, 'conformedPersons' needs also to be an array of array of string.
             val errorExpression = errorCondition.map(errorCond => {
-              mapNestedArrayOfPrimitives(dt, errorCond, doFlatten = true)
+              mapNestedArrayOfPrimitives(dt, errorCond, parentPath, arrCtx, doFlatten = true)
             })
 
             val doFlatten = errorCondition.nonEmpty
-            handlePrimitive(dt, Some(mapNestedArrayOfPrimitives(dt, expression.get)),
-              errorExpression, doFlatten)
+            handlePrimitive(dt, Some(mapNestedArrayOfPrimitives(dt, expression.get, parentPath, arrCtx)),
+              errorExpression, parentPath, arrCtx, doFlatten)
         }
       }
 
-      def handleNestedStruct(dt: StructType) = {
+      def handleNestedStruct(dt: StructType,
+                             parentPath: String,
+                             arrCtx: ArrayContext) = {
         // If the leaf array element is struct we need to create the output field inside the struct itself.
         // This is done by specifying "*" as a leaf field.
         // If this struct is not a leaf element we just recursively call mapStruct() with child portion of the path.
         val innerPath = if (isLeaf) Seq("*") else path.tail
-        val innerStruct = (x: Column) => struct(mapStruct(dt, innerPath, Some(x)): _*)
-        transform(curColumn, innerStruct, lambdaName).as(fieldName)
+        transform(curColumn,
+          (x: Column) => struct(mapStruct(dt, innerPath, parentPath, arrCtx.withArraysUpdated(parentPath, x), Some(x)): _*),
+          lambdaName).as(fieldName)
       }
 
       val elemType = schema.elementType
       val newColumn = elemType match {
         case dt: StructType =>
-          handleNestedStruct(dt)
+          handleNestedStruct(dt, parentPath, arrCtx)
         case dt: ArrayType =>
-          handleNestedArray(dt)
+          handleNestedArray(dt, parentPath, arrCtx)
         case dt =>
           // This handles an array of primitives, e.g. arrays of strings etc.
-          val transformExpression = expression.map(expr => (x: Column) => expr(x))
-          val errorExpression = errorCondition.map(cond => (x: Column) => cond(x))
-          handlePrimitive(dt, transformExpression, errorExpression)
+          val transformExpression = expression.map(expr => (x: Column, gf: GetFieldFunction) => expr(x, gf))
+          val errorExpression = errorCondition.map(cond => (x: Column, gf: GetFieldFunction) => cond(x, gf))
+          handlePrimitive(dt, transformExpression, errorExpression, parentPath, arrCtx)
       }
       if (newColumn == null) {
         mappedFields
@@ -523,7 +662,7 @@ object NestedArrayTransformations {
 
     val schema = df.schema
     val path = inputColumnName.split('.')
-    (df.select(mapStruct(schema, path): _*), errorColumnName) // ;-]
+    (df.select(mapStruct(schema, path, "", new ArrayContext): _*), errorColumnName) // ;-]
   }
 
   /**
@@ -540,6 +679,7 @@ object NestedArrayTransformations {
                    globalErrorColumn: String): DataFrame = {
 
     def flattenNestedArrays(schema: StructType, inputColumnName: String): Column = {
+      @scala.annotation.tailrec
       def handleNestedStruct(schema: StructType, columnPath: Seq[String], parentPath: Option[Column],
                              inputColumn: Column, arrayLevel: Int): Column = {
         val curCol = parentPath match {
@@ -639,7 +779,7 @@ object NestedArrayTransformations {
 
   /** Adds a column similar to df.withColumn(), but you can specify the position of the new column by specifying
     * a column name after which to add the new column */
-  private def addColumnAfter(df: DataFrame, afterColumn: String, columnName: String, expr: Column): DataFrame = {
+  def addColumnAfter(df: DataFrame, afterColumn: String, columnName: String, expr: Column): DataFrame = {
     df.select(df.columns.flatMap(c => {
       if (c == afterColumn) {
         Seq(
@@ -653,11 +793,95 @@ object NestedArrayTransformations {
 
   }
 
-  /** Checks if a path is a leaf element
+  private def validateErrorColumnName(errorColumnName: String): Unit = {
+    if (errorColumnName.contains('.')) {
+      throw new IllegalArgumentException(s"Error columns should be at the root schema level. " +
+        s"Value '$errorColumnName' is not valid.")
+    }
+  }
+
+  /**
+    * Checks if a path is a leaf element
     * Basically it is just a slightly more efficient version of path.length == 1
     *
     * @param path A path to an element of a struct (e.g. company.employee.firstName)
     * @return true if a path consists only of 1 element meaning it is the leaf element of the input column path
     */
   private def isLeafElement(path: Seq[String]): Boolean = path.lengthCompare(2) < 0
+
+  /**
+    * Converts s struct field path into a notation that `nestedWithColumnMapHelper()` expects for struct transformations.
+    * (see the documentation for `nestedWithColumnMapHelper()` for details)
+    *
+    * @param inputStructField A fully-qualified struct field name.
+    * @return A modified path prepared to be used in `nestedWithColumnMapHelper()`.
+    */
+  private def toStructNotation(inputStructField: String): String = {
+    if (inputStructField.nonEmpty) s"$inputStructField.*" else ""
+  }
+
+  /**
+    * Converts from a simple transformation to en extended transformation.
+    * In the extended expression the function for getting a column by fully qualified names is ignored.
+    *
+    * @param transformation A transformation function that takes a column and returns a column.
+    * @return An extended transformation that takes a column and a function that returns columns from fully qualified
+    *         names and returns a column.
+    */
+  private def toExtendedTransformation(transformation: TransformFunction): ExtendedTransformFunction = {
+    (field, _) => transformation(field)
+  }
+
+  /**
+    * The method takes a field and a parent field, both fully qualified. The method does the following:
+    * <ul>
+    *   <li>If the input field is a child of the parent field the path is split into parent and child parts and these
+    *   parts are returned as a pair.</li>
+    *   <li>If the input field is not a child of the parent field the method returns a pair of empty string and
+    *   the full qualified input field name.</li>
+    * </ul>
+    *
+    * @param field       A fully qualified input field name
+    * @param parentField A parent field to split in case the input field is its child
+    * @return A pair consisting of the parent and the child field parts
+    */
+  private[transformations] def splitParentField(field: String, parentField: String): (String, String) = {
+    val fixedField = field.trim
+    val fixedParentField = parentField.trim
+
+    if (fixedField == fixedParentField) {
+      (fixedField, "")
+    } else {
+      val parentFieldWithDot = if (fixedParentField.endsWith(".")) fixedParentField else fixedParentField + "."
+      val parentFieldWithoutDot = if (fixedParentField.endsWith(".")) fixedParentField.dropRight(1) else fixedParentField
+
+      if (fixedField.startsWith(parentFieldWithDot)) {
+        (parentFieldWithoutDot, fixedField.substring(parentFieldWithDot.length))
+      } else {
+        ("", fixedField)
+      }
+    }
+  }
+
+  /**
+    * The method takes a field and a list of parent fields, all fully qualified. The method does the following:
+    * <ul>
+    *  <li>If the input field is a child of any of the parent fields, a deepest parent is selected, and the path is
+    *  split into parent and child parts and these parts are returned as a pair.</li>
+    *  <li>If the input field is not a child of any of the listed parents the method returns a pair of empty string and
+    *  the full qualified input field name.</li>
+    * </ul>
+    *
+    * @param field        A fully qualified input field name
+    * @param parentFields A parent field to split in case the input field is its child
+    * @return A pair consisting of the parent and the child field parts
+    */
+  private[transformations] def splitByDeepestParent(field: String, parentFields: Seq[String]): (String, String) = {
+    if (parentFields.isEmpty) {
+      ("", field)
+    } else {
+      parentFields.map(parentField => splitParentField(field, parentField))
+        .maxBy { case (parent, _) => parent.length }
+    }
+  }
 }

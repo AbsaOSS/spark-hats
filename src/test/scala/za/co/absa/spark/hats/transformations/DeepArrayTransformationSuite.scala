@@ -834,6 +834,51 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
     assertResults(actualResults, expectedResults)
   }
 
+  test("Test splitParentField()") {
+    import NestedArrayTransformations._
+
+    assert(splitParentField("a.b.c", "") == ("", "a.b.c"))
+    assert(splitParentField("a.b.c", "b") == ("", "a.b.c"))
+    assert(splitParentField("a.b.c", "c") == ("", "a.b.c"))
+    assert(splitParentField("aa.bb.cc", "a") == ("", "aa.bb.cc"))
+    assert(splitParentField("aa.bb.cc", "aa.b") == ("", "aa.bb.cc"))
+    assert(splitParentField("aa.bb.cc", "aa.bb") == ("aa.bb", "cc"))
+    assert(splitParentField("a.b.c", "a") == ("a", "b.c"))
+    assert(splitParentField("a.b.c", "a.b") == ("a.b", "c"))
+    assert(splitParentField("a.b.c", "a.b.c") == ("a.b.c", ""))
+    assert(splitParentField(" a.b.c ", "a.b") == ("a.b", "c"))
+    assert(splitParentField("a.b.c", " a.b ") == ("a.b", "c"))
+    assert(splitParentField(" a.b.c ", " a.b ") == ("a.b", "c"))
+    assert(splitParentField(" a.b.c ", "a.b.c") == ("a.b.c", ""))
+    assert(splitParentField("a.b.c", " a.b.c ") == ("a.b.c", ""))
+    assert(splitParentField(" a.b.c ", " a.b.c ") == ("a.b.c", ""))
+  }
+
+  test("Test splitByDeepestParent()") {
+    import NestedArrayTransformations._
+
+    val parentFields = Seq("a", "a.b", "a.b.c", "a.b.d", "aa.bb.cc")
+
+    assert(splitByDeepestParent("a.b.c", Nil) == ("", "a.b.c"))
+    assert(splitByDeepestParent("a.b.c", parentFields) == ("a.b.c", ""))
+
+    assert(splitByDeepestParent("a.b.c.e.f", parentFields) == ("a.b.c", "e.f"))
+    assert(splitByDeepestParent("a.b.d.e.f", parentFields) == ("a.b.d", "e.f"))
+    assert(splitByDeepestParent("a.b.e.f", parentFields) == ("a.b", "e.f"))
+    assert(splitByDeepestParent("a.e.f", parentFields) == ("a", "e.f"))
+    assert(splitByDeepestParent("e.f", parentFields) == ("", "e.f"))
+    assert(splitByDeepestParent("a", parentFields) == ("a", ""))
+    assert(splitByDeepestParent("e", parentFields) == ("", "e"))
+    assert(splitByDeepestParent("aa", parentFields) == ("", "aa"))
+    assert(splitByDeepestParent("aa.bb", parentFields) == ("", "aa.bb"))
+    assert(splitByDeepestParent("aa.bb.cc", parentFields) == ("aa.bb.cc", ""))
+    assert(splitByDeepestParent("aa.bb.cc.dd", parentFields) == ("aa.bb.cc", "dd"))
+
+    // This test will fail if the depth of a parent is calculated by the number of dots in a subfield,
+    // but will succeed when such depth is calculated by parent field length.
+    assert(splitByDeepestParent("a.b", Seq("", "a")) == ("a", "b"))
+  }
+
   private def assertSchema(actualSchema: String, expectedSchema: String): Unit = {
     if (actualSchema != expectedSchema) {
       log.error("EXPECTED:")

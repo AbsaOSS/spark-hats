@@ -1,0 +1,12 @@
+root
+ |-- array2: array (nullable = true)
+ |    |-- element: struct (containsNull = false)
+ |    |    |-- key2: long (nullable = true)
+ |    |    |-- inner2: array (nullable = true)
+ |    |    |    |-- element: struct (containsNull = false)
+ |    |    |    |    |-- key9: long (nullable = true)
+ |    |    |    |    |-- key10: long (nullable = true)
+ |    |    |    |    |-- struct3: struct (nullable = false)
+ |    |    |    |    |    |-- k1: integer (nullable = true)
+ |    |    |    |    |    |-- k2: integer (nullable = true)
+ |    |    |    |    |    |-- out: string (nullable = true)

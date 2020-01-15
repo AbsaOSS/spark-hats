@@ -1,0 +1,8 @@
+root
+ |-- key1: long (nullable = true)
+ |-- array1: array (nullable = true)
+ |    |-- element: struct (containsNull = false)
+ |    |    |-- key7: long (nullable = true)
+ |    |    |-- key8: long (nullable = true)
+ |    |    |-- skey2: string (nullable = true)
+ |    |    |-- skey3: string (nullable = true)
