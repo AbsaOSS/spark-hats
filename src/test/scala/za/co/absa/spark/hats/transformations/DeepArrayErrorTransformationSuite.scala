@@ -21,10 +21,10 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.{IntegerType, StringType}
 import org.scalatest.FunSuite
 import org.slf4j.LoggerFactory
-import za.co.absa.enceladus.utils.general.JsonUtils
 import za.co.absa.spark.hats.SparkTestBase
 import za.co.absa.spark.hats.transformations.samples.DeepArraySamples._
 import za.co.absa.spark.hats.transformations.samples.SampleErrorUDFs
+import za.co.absa.spark.hats.utils.JsonUtils
 
 class DeepArrayErrorTransformationSuite extends FunSuite with SparkTestBase {
   // scalastyle:off line.size.limit
@@ -860,6 +860,97 @@ class DeepArrayErrorTransformationSuite extends FunSuite with SparkTestBase {
 
     processCastExample(df, "legs.conditions.checks.checkNums", "legs.conditions.checks.optimizedNums",
       expectedSchema, expectedResults)
+  }
+
+  test ("Test combining fields on multiple levels of nesting") {
+
+    val sample = """[{"id":1,"legs":[{"legid":100,"conditions":[{"checks":[{"checkNums":["1","2","3b","4","5c","6"]}],"amount":100}]}]}]"""
+
+    val df = JsonUtils.getDataFrameFromJson(spark, Seq(sample))
+
+    val expectedSchema =
+      """root
+        | |-- id: long (nullable = true)
+        | |-- legs: array (nullable = true)
+        | |    |-- element: struct (containsNull = false)
+        | |    |    |-- conditions: array (nullable = true)
+        | |    |    |    |-- element: struct (containsNull = false)
+        | |    |    |    |    |-- amount: long (nullable = true)
+        | |    |    |    |    |-- checks: array (nullable = true)
+        | |    |    |    |    |    |-- element: struct (containsNull = false)
+        | |    |    |    |    |    |    |-- checkNums: array (nullable = true)
+        | |    |    |    |    |    |    |    |-- element: string (containsNull = true)
+        | |    |    |    |    |    |    |-- optimizedNums: array (nullable = true)
+        | |    |    |    |    |    |    |    |-- element: string (containsNull = true)
+        | |    |    |-- legid: long (nullable = true)
+        | |-- errors: array (nullable = true)
+        | |    |-- element: struct (containsNull = true)
+        | |    |    |-- errType: string (nullable = true)
+        | |    |    |-- errCode: string (nullable = true)
+        | |    |    |-- errMsg: string (nullable = true)
+        | |    |    |-- errCol: string (nullable = true)
+        | |    |    |-- rawValues: array (nullable = true)
+        | |    |    |    |-- element: string (containsNull = true)
+        | |    |    |-- mappings: array (nullable = true)
+        | |    |    |    |-- element: struct (containsNull = true)
+        | |    |    |    |    |-- mappingTableColumn: string (nullable = true)
+        | |    |    |    |    |-- mappedDatasetColumn: string (nullable = true)
+        |""".stripMargin.replace("\r\n", "\n")
+
+    val expectedResults =
+      """[ {
+        |  "id" : 1,
+        |  "legs" : [ {
+        |    "conditions" : [ {
+        |      "amount" : 100,
+        |      "checks" : [ {
+        |        "checkNums" : [ "1", "2", "3b", "4", "5c", "6" ],
+        |        "optimizedNums" : [ "1_100_1", "2_100_1", "3b_100_1", "4_100_1", "5c_100_1", "6_100_1" ]
+        |      } ]
+        |    } ],
+        |    "legid" : 100
+        |  } ],
+        |  "errors" : [ {
+        |    "errType" : "confCastError",
+        |    "errCode" : "E00003",
+        |    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+        |    "errCol" : "legs.conditions.checks.optimizedNums",
+        |    "rawValues" : [ "3b" ],
+        |    "mappings" : [ ]
+        |  }, {
+        |    "errType" : "confCastError",
+        |    "errCode" : "E00003",
+        |    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+        |    "errCol" : "legs.conditions.checks.optimizedNums",
+        |    "rawValues" : [ "5c" ],
+        |    "mappings" : [ ]
+        |  } ]
+        |} ]"""
+        .stripMargin.replace("\r\n", "\n")
+
+    val inputColumn = "legs.conditions.checks.checkNums"
+    val outputColumn = "legs.conditions.checks.optimizedNums"
+    val dfOut = NestedArrayTransformations.nestedExtendedWithColumnAndErrorMap(df, inputColumn, outputColumn, "errors",
+      (_, gf) => {
+        concat(gf(inputColumn),
+          lit("_"),
+          gf("legs.conditions.amount").cast(StringType),
+          lit("_"),
+          gf("id"))
+      }, (c, gf) => {
+        when(c.isNotNull.and(c.cast(IntegerType).isNull)
+          .and(gf("legs.conditions.amount") === 100)
+          .and(gf("legs.legid") === 100)
+          .and(gf("id") === 1),
+          callUDF("confCastErr", lit(outputColumn), gf(inputColumn).cast(StringType)))
+          .otherwise(null)
+      })
+
+    val actualSchema = dfOut.schema.treeString
+    val actualResults = JsonUtils.prettySparkJSON(dfOut.toJSON.collect)
+
+    assertSchema(actualSchema, expectedSchema)
+    assertResults(actualResults, expectedResults)
   }
 
   test ("Test deep array transformations unhappy paths") {

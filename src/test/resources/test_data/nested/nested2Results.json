@@ -1,0 +1,71 @@
+[ {
+  "key1" : 1,
+  "struct2" : {
+    "inner1" : {
+      "key5" : 3,
+      "key6" : 1,
+      "skey1" : "1"
+    },
+    "skey2" : "1 3 1"
+  }
+}, {
+  "key1" : 2,
+  "struct2" : {
+    "inner1" : {
+      "key5" : 2,
+      "key6" : 3,
+      "skey1" : "2"
+    },
+    "skey2" : "2 2 3"
+  }
+}, {
+  "key1" : 3,
+  "struct2" : {
+    "inner1" : {
+      "key5" : 1,
+      "key6" : 2,
+      "skey1" : "3"
+    },
+    "skey2" : "3 1 2"
+  }
+}, {
+  "key1" : 2,
+  "struct2" : {
+    "inner1" : {
+      "key5" : 3,
+      "key6" : 2,
+      "skey1" : "2"
+    },
+    "skey2" : "2 3 2"
+  }
+}, {
+  "key1" : 4,
+  "struct2" : {
+    "inner1" : {
+      "key5" : 2,
+      "key6" : 1,
+      "skey1" : "3"
+    },
+    "skey2" : "4 2 1"
+  }
+}, {
+  "key1" : 1,
+  "struct2" : {
+    "inner1" : {
+      "key5" : 1,
+      "key6" : 2,
+      "skey1" : "4"
+    },
+    "skey2" : "1 1 2"
+  }
+}, {
+  "key1" : 1,
+  "struct2" : {
+    "inner1" : {
+      "key5" : 1
+    }
+  }
+}, {
+  "key1" : 1,
+  "struct2" : { }
+} ]

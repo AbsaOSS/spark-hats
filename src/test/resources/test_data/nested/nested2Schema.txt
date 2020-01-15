@@ -1,0 +1,8 @@
+root
+ |-- key1: long (nullable = true)
+ |-- struct2: struct (nullable = false)
+ |    |-- inner1: struct (nullable = true)
+ |    |    |-- key5: long (nullable = true)
+ |    |    |-- key6: long (nullable = true)
+ |    |    |-- skey1: string (nullable = true)
+ |    |-- skey2: string (nullable = true)

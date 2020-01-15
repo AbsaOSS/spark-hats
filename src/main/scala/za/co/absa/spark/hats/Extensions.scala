@@ -72,7 +72,7 @@ object Extensions {
     def nestedMapColumn(inputColumnName: String,
                         outputColumnName: String,
                         expression: TransformFunction): DataFrame = {
-      NestedArrayTransformations.nestedWithColumnMapHelper(dataset, inputColumnName, outputColumnName, Some(expression))._1
+      NestedArrayTransformations.nestedWithColumnMap(dataset, inputColumnName, outputColumnName, expression)
     }
 
     /**
