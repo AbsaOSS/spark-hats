@@ -291,6 +291,27 @@ object NestedArrayTransformations {
   }
 
   /**
+    * Add a column that can be inside nested structs, arrays and its combinations
+    *
+    * @param df            Dataframe to be transformed
+    * @param newColumnName A column name to be created
+    * @param expression    A function that that takes a 'getField()' function and returns a column as a Spark expression.
+    * @return A dataframe with a new field that contains transformed values.
+    */
+  def nestedAddColumnExtended(df: DataFrame,
+                      newColumnName: String,
+                      expression: ExtendedTransformFunction): DataFrame = {
+    try {
+      nestedWithColumnMapHelper(df, newColumnName, "", Some(expression), None)._1
+    } catch {
+      case e: IllegalArgumentException if e.getMessage.contains("Output field cannot be empty") =>
+        throw new IllegalArgumentException(s"The column '$newColumnName' already exists.", e)
+      case NonFatal(e) => throw e
+    }
+
+  }
+
+  /**
     * Drop a column from inside a nested structs, arrays and its combinations
     *
     * @param df           Dataframe to be transformed

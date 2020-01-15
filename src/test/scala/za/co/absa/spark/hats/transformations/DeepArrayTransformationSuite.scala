@@ -677,7 +677,7 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
     // Struct of struct
     val df = spark.sparkContext.parallelize(structOfStructSampleN).toDF
 
-    val dfOut = df.nestedMapStruct("employee.address", "combinedCity", c => {
+    val dfOut = NestedArrayTransformations.nestedStructMap(df, "employee.address", "combinedCity", c => {
       if (c == null) {
         concat(col("city"), col("street"))
       } else {
@@ -712,7 +712,7 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
     // Array of struct
     val df = spark.sparkContext.parallelize(arraysOfStructsSampleN).toDF
 
-    val dfOut = df.nestedMapStruct("person", "combinedName", c => {
+    val dfOut = NestedArrayTransformations.nestedStructMap(df, "person", "combinedName", c => {
       concat(c.getField("firstName"), lit(" "), c.getField("lastName"))
     })
 
@@ -741,7 +741,7 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
     // Array of struct
     val df = spark.sparkContext.parallelize(arraysOfArraysOfStructSampleN).toDF
 
-    val dfOut = df.nestedMapStruct("person", "combinedName", c => {
+    val dfOut = NestedArrayTransformations.nestedStructMap(df, "person", "combinedName", c => {
       concat(c.getField("firstName"), lit(" "), c.getField("lastName"))
     })
 
@@ -771,7 +771,7 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
     // Array of struct
     val df = spark.sparkContext.parallelize(arraysOfStrtuctsDeepSampleN).toDF
 
-    val dfOut = df.nestedMapStruct("legs.conditions", "combinedField", c => {
+    val dfOut = NestedArrayTransformations.nestedStructMap(df, "legs.conditions", "combinedField", c => {
       concat(c.getField("conif"), lit(" "), c.getField("conthen"), lit(" ("), c.getField("amount").cast(StringType), lit(")"))
     })
 
