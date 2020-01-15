@@ -24,6 +24,8 @@ ThisBuild / organization := "za.co.absa"
 ThisBuild / scalaVersion := scala211
 ThisBuild / crossScalaVersions := Seq(scala211, scala212)
 
+ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation")
+
 // Scala shouldn't be packaged so it is explicitly added as a provided dependency below
 ThisBuild / autoScalaLibrary := false
 
