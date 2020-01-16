@@ -15,7 +15,7 @@ Reference the library
 ```
 groupId: za.co.absa
 artifactId: spark-hats_2.11
-version: 0.1.0
+version: 0.2.0
 ```
 
 ### Scala 2.12
@@ -24,14 +24,14 @@ version: 0.1.0
 ```
 groupId: za.co.absa
 artifactId: spark-hats_2.12
-version: 0.1.0
+version: 0.2.0
 ```
 
 Please, use the table below to determine what version of spark-hats to use for Spark compatibility.
 
 | spark-hats version | Scala version |  Spark version  |
 |:------------------:|:-------------:|:---------------:|
-|       0.1.x        |  2.11, 2.12   |     2.4.3+      |
+|       0.x.x        |  2.11, 2.12   |     2.4.3+      |
 
 Import the extensions into your scope.
 
