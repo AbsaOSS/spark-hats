@@ -55,7 +55,7 @@ object Extensions {
       * @return A dataframe with a new field that contains transformed values.
       */
     def nestedWithColumnExtended(newColumnName: String,
-                         expression: ExtendedTransformFunction): Dataset[Row] = {
+                                 expression: ExtendedTransformFunction): Dataset[Row] = {
       NestedArrayTransformations.nestedAddColumnExtended(dataset, newColumnName,
         (_, getFieldFunction) => expression(getFieldFunction))
     }
