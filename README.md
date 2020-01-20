@@ -62,7 +62,7 @@ scala> df.show(false)
 The `nestedWithColumn` method allows adding new fields inside nested structures and arrays.
 
 The addition of a column API is provided in two flavors: the basic and the extended API. The basic API is simpler to
-use, but the expressions it expects can only reference columns inside the array and the root of the schema. Here is an example of the basic add
+use, but the expressions it expects can only reference columns at the root of the schema. Here is an example of the basic add
 column API:
 
 ```scala
