@@ -9,8 +9,7 @@ arbitrary levels of nesting.
 
 Reference the library
 
-### Scala 2.11
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.11)
+### Scala 2.11 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.11)
 
 ```
 groupId: za.co.absa
@@ -18,8 +17,7 @@ artifactId: spark-hats_2.11
 version: 0.2.0
 ```
 
-### Scala 2.12
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12)
+### Scala 2.12 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12)
 
 ```
 groupId: za.co.absa
@@ -31,10 +29,9 @@ Please, use the table below to determine what version of spark-hats to use for S
 
 | spark-hats version | Scala version |  Spark version  |
 |:------------------:|:-------------:|:---------------:|
-|       0.x.x        |  2.11, 2.12   |     2.4.3+      |
+|       0.2.x        |  2.11, 2.12   |     2.4.3+      |
 
-Import the extensions into your scope.
-
+To use the extensions you need to add this import to your Spark application or shell:
 ```scala
 import za.co.absa.spark.hats.Extensions._
 ```
@@ -61,18 +58,11 @@ scala> df.show(false)
 +---+------------------------------+
 ```
 
-### Turning on the extensions
-
-To use the extensions you need to add this import to your Spark application or shell:
-```scala
-import za.co.absa.spark.hats.Extensions._
-```
-
 ### Add a column
 The `nestedWithColumn` method allows adding new fields inside nested structures and arrays.
 
 The addition of a column API is provided in two flavors: the basic and the extended API. The basic API is simpler to
-use, but expressions it expects cannot reference columns on parent array levels. Here is an example of the basic add
+use, but the expressions it expects can only reference columns inside the array and the root of the schema. Here is an example of the basic add
 column API:
 
 ```scala
@@ -95,17 +85,17 @@ scala> df.nestedWithColumn("my_array.c", lit("hello")).show(false)
 ```
 
 ### Add column (extended)
-The extended API method `nestedWithColumnExtended` works similar to the basic one, but allows the caller to reference
+The extended API method `nestedWithColumnExtended` works similarly to the basic one but allows the caller to reference
 other array elements, possibly on different levels of nesting. The way it allows this is a little tricky.
 The second parameter is changed from being a column to a *function that returns a column*. Moreover, this function has
 an argument which is a function itself, the `getField()` function. The `getField()` function can be used in the
 transformation to reference other columns in the dataframe by their fully qualified name.
 
-Int the following example, a transformation adds a new field `my_array.c` to the dataframe by concatenating a root
+In the following example, a transformation adds a new field `my_array.c` to the dataframe by concatenating a root
 level column `id` with a nested field `my_array.b`:
 
 ```scala
-scala> val dfOut = df.nestedWithColumnExtended(newColumnName = "my_array.c", expression = getField =>
+scala> val dfOut = df.nestedWithColumnExtended("my_array.c", getField =>
          concat(getField("id").cast("string"), getField("my_array.b"))
        )
 
@@ -160,7 +150,8 @@ scala> df.nestedDropColumn("my_array.b").show(false)
 ### Map a column
 
 The `nestedMapColumn` method applies a transformation on a nested field. If the input column is a primitive field the
-method will add `outputColumnName` at the same level of nesting. If a struct column is expected you can use `.getField(...)` method to operate on its children.
+method will add `outputColumnName` at the same level of nesting. If a struct column is expected you can use
+`.getField(...)` method to operate on its children.
 
 The output column name can omit the full path as the field will be created at the same level of nesting as the input column.
 
