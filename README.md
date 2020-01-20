@@ -36,9 +36,10 @@ To use the extensions you need to add this import to your Spark application or s
 import za.co.absa.spark.hats.Extensions._
 ```
 
-## Methods
+## Motivation
 
-The usage of nested helper methods is shown on this simple example that contains an array of struct fields.
+Here is a small example we will use to show you how `spark-hats` work. The important hthing is that the dataframe
+contains an array of struct fields.
 
 ```scala
 scala> df.printSchema()
@@ -57,6 +58,49 @@ scala> df.show(false)
 |2  |[[1, bar], [2, baz], [3, foz]]|
 +---+------------------------------+
 ```
+
+Now, say, we want to add a field `c` as part of the struct alongside `a` and `b` from the example above. The
+expression for `c` is `c = a + 1`.
+
+Here is the code you can use in Spark:
+```scala
+    val dfOut = df.select(col("id"), transform(col("my_array"), c => {
+      struct(c.getField("a").as("a"),
+        c.getField("b").as("b"),
+        (c.getField("a") + 1).as("c"))
+    }).as("my_array"))
+
+```
+(to use `transform()` in Scala API you need to add [spark-hofs](https://github.com/AbsaOSS/spark-hofs) as a dependency).
+
+Here is how it looks when using `spark-hats` library. 
+```scala
+    val dfOut = df.nestedMapColumn("my_array.a","c", a => a + 1)
+```
+
+Both produce the following results:
+```scala
+scala> dfOut.printSchema
+root
+ |-- id: long (nullable = true)
+ |-- my_array: array (nullable = true)
+ |    |-- element: struct (containsNull = false)
+ |    |    |-- a: long (nullable = true)
+ |    |    |-- b: string (nullable = true)
+ |    |    |-- c: long (nullable = true)
+
+scala> dfOut.show(false)
++---+---------------------------------------------------+
+|id |my_array                                           |
++---+---------------------------------------------------+
+|1  |[[1, foo, hello]]                                  |
+|2  |[[1, bar, hello], [2, baz, hello], [3, foz, hello]]|
++---+---------------------------------------------------+
+```
+
+Imagine how the code will look like for more levels of array nesting.
+
+## Methods
 
 ### Add a column
 The `nestedWithColumn` method allows adding new fields inside nested structures and arrays.
