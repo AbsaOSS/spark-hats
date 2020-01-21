@@ -778,13 +778,16 @@ object NestedArrayTransformations {
 
         // This preserves the position of the error column ([arguably] less efficient)
         addColumnAfter(df.withColumnRenamed(globalErrorColumn, tmpCol),
-          tmpCol, globalErrorColumn, callUDF("arrayDistinctErrors", concat(col(tmpCol), flattenedColumn)))
-          .drop(col(tmpCol))
+          tmpCol, globalErrorColumn, callUDF("arrayDistinctErrors",
+          when(flattenedColumn.isNull, col(tmpCol)).otherwise(concat(col(tmpCol), flattenedColumn)))
+        ).drop(col(tmpCol))
 
         // This moves the error column to the end ([arguably] more efficient than preserving the position
         // of the error column)
         //df.withColumnRenamed(globalErrorColumn, tmpCol)
-        //  .withColumn(globalErrorColumn, callUDF("arrayDistinctErrors", concat(col(tmpCol), flattenedColumn)))
+        //  .withColumn(globalErrorColumn, callUDF("arrayDistinctErrors",
+        //  when(flattenedColumn.isNull, col(tmpCol)).otherwise(concat(col(tmpCol), flattenedColumn)))
+        //  ))
         //  .drop(col(tmpCol))
 
       } else {

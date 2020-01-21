@@ -21,7 +21,7 @@ import org.apache.spark.sql.types.StringType
 import org.scalatest.FunSuite
 import org.slf4j.LoggerFactory
 import za.co.absa.spark.hats.SparkTestBase
-import za.co.absa.spark.hats.transformations.samples.{NestedTestCaseFactory, SampleErrorUDFs}
+import za.co.absa.spark.hats.transformations.samples.{ErrorMessage, NestedTestCaseFactory, SampleErrorUDFs}
 import za.co.absa.spark.hats.utils.JsonUtils
 
 class ExtendedTransformationsSuite extends FunSuite with SparkTestBase {
@@ -165,6 +165,33 @@ class ExtendedTransformationsSuite extends FunSuite with SparkTestBase {
     val expectedResults = getResourceString("/test_data/nested/nested8Results.json")
 
     val df = nestedTestCaseFactory.getTestCase
+
+    val dfOut = NestedArrayTransformations.nestedExtendedStructAndErrorMap(df, "array2.inner2", "out", "errCol", (c, gf) =>
+      concat(c.getField("key10"),
+        lit(" "),
+        gf("array2.inner2.struct3.k1").cast(StringType))
+      ,
+      (_, gf) => {
+        when(gf("array2.inner2.struct3.k1") =!= 1,
+          callUDF("confCastErr", lit("k1!==1"), gf("array2.inner2.struct3.k1").cast(StringType))
+        ).otherwise(null)
+      }
+    ).select("array2", "errCol")
+
+    val actualSchema = dfOut.schema.treeString
+    val actualResults = JsonUtils.prettySparkJSON(dfOut.orderBy("id").toJSON.collect())
+
+    assertSchema(actualSchema, expectedSchema)
+    assertResults(actualResults, expectedResults)
+  }
+
+  test("Test extended array transformations with error column that has existing errors") {
+    val expectedSchema = getResourceString("/test_data/nested/nested9Schema.txt")
+    val expectedResults = getResourceString("/test_data/nested/nested9Results.json")
+
+    val df = nestedTestCaseFactory
+      .getTestCase
+      .withColumn("errCol", array(typedLit(ErrorMessage("Initial", "000", "ErrMsg", "id", Seq(), Seq()))))
 
     val dfOut = NestedArrayTransformations.nestedExtendedStructAndErrorMap(df, "array2.inner2", "out", "errCol", (c, gf) =>
       concat(c.getField("key10"),
