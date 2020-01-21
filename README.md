@@ -223,5 +223,5 @@ scala> df.nestedMapColumn(inputColumnName = "my_array.a", outputColumnName = "c"
 - #### 0.2.1 released 21 January 2020.
   - [#10](https://github.com/AbsaOSS/spark-hats/issues/10) Fixed error column aggregation when the input array is `null`.
   
-- #### 0.2.0 released 21 January 2020.
+- #### 0.2.0 released 16 January 2020.
   - [#5](https://github.com/AbsaOSS/spark-hats/issues/5) Added the extended nested transformation API that allows referencing arbitrary columns.
