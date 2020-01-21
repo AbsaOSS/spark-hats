@@ -14,7 +14,7 @@ Reference the library
 ```
 groupId: za.co.absa
 artifactId: spark-hats_2.11
-version: 0.2.0
+version: 0.2.1
 ```
 
 ### Scala 2.12 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12)
@@ -22,7 +22,7 @@ version: 0.2.0
 ```
 groupId: za.co.absa
 artifactId: spark-hats_2.12
-version: 0.2.0
+version: 0.2.1
 ```
 
 Please, use the table below to determine what version of spark-hats to use for Spark compatibility.
@@ -217,3 +217,10 @@ scala> df.nestedMapColumn(inputColumnName = "my_array.a", outputColumnName = "c"
 |2  |[[1, bar, 2], [2, baz, 3], [3, foz, 4]]|
 +---+---------------------------------------+
 ```
+
+## Changelog
+- #### 0.2.1 released 21 January 2020.
+  - [#10](https://github.com/AbsaOSS/spark-hats/issues/10) Fixed error column aggregation when the input array is `null`.
+  
+- #### 0.2.0 released 21 January 2020.
+  - [#5](https://github.com/AbsaOSS/spark-hats/issues/5) Added the extended nested transformation API that allows referencing arbitrary columns.
