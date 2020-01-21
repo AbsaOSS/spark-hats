@@ -29,6 +29,7 @@ Please, use the table below to determine what version of spark-hats to use for S
 
 | spark-hats version | Scala version |  Spark version  |
 |:------------------:|:-------------:|:---------------:|
+|       0.1.x        |  2.11, 2.12   |     2.4.3+      |
 |       0.2.x        |  2.11, 2.12   |     2.4.3+      |
 
 To use the extensions you need to add this import to your Spark application or shell:
@@ -90,12 +91,12 @@ root
  |    |    |-- c: long (nullable = true)
 
 scala> dfOut.show(false)
-+---+---------------------------------------------------+
-|id |my_array                                           |
-+---+---------------------------------------------------+
-|1  |[[1, foo, hello]]                                  |
-|2  |[[1, bar, hello], [2, baz, hello], [3, foz, hello]]|
-+---+---------------------------------------------------+
++---+---------------------------------------+
+|id |my_array                               |
++---+---------------------------------------+
+|1  |[[1, foo, 2]]                          |
+|2  |[[1, bar, 2], [2, baz, 3], [3, foz, 4]]|
++---+---------------------------------------+
 ```
 
 Imagine how the code will look like for more levels of array nesting.
