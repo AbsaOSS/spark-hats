@@ -212,6 +212,34 @@ class ExtendedTransformationsSuite extends FunSuite with SparkTestBase {
     assertResults(actualResults, expectedResults)
   }
 
+  test("Test extended array transformations with error column for an array inside a double nested struct") {
+    val expectedSchema = getResourceString("/test_data/nested/nested10Schema.txt")
+    val expectedResults = getResourceString("/test_data/nested/nested10Results.json")
+
+    val df = nestedTestCaseFactory
+      .getTestCase
+      .withColumn("errCol", array(typedLit(ErrorMessage("Initial", "000", "ErrMsg", "id", Seq(), Seq()))))
+
+    val dfOut = NestedArrayTransformations.nestedExtendedStructAndErrorMap(df, "struct3.inner3.array3",
+      "struct3.inner3.array3.out", "errCol", (c, gf) =>
+      concat(c.getField("a1"),
+        lit(" "),
+        gf("struct3.inner3.array3.a2").cast(StringType))
+      ,
+      (_, gf) => {
+        when(gf("struct3.inner3.array3.a1") =!= 3,
+          callUDF("confCastErr", lit("a1!==3"), gf("struct3.inner3.array3.a1").cast(StringType))
+        ).otherwise(null)
+      }
+    ).select("struct3", "errCol")
+
+    val actualSchema = dfOut.schema.treeString
+    val actualResults = JsonUtils.prettySparkJSON(dfOut.orderBy("id").toJSON.collect())
+
+    assertSchema(actualSchema, expectedSchema)
+    assertResults(actualResults, expectedResults)
+  }
+
   private def getResourceString(name: String): String =
     IOUtils.toString(getClass.getResourceAsStream(name), "UTF-8")
 

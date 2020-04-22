@@ -36,6 +36,15 @@ class NestedTestCaseFactory(implicit spark: SparkSession) {
           StructField("skey1", StringType)
         )))
       ))),
+      StructField("struct3", StructType(Array(
+        StructField("inner3", StructType(Array(
+          StructField("array3", types.ArrayType(StructType(Array(
+            StructField("a1", LongType),
+            StructField("a2", LongType),
+            StructField("a3", StringType)
+          ))))
+        )))
+      ))),
       StructField("array1", types.ArrayType(StructType(Array(
         StructField("key7", LongType),
         StructField("key8", LongType),

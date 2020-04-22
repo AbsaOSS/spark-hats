@@ -1,0 +1,222 @@
+[ {
+  "struct3" : {
+    "inner3" : {
+      "array3" : [ {
+        "a1" : 3,
+        "a2" : 1,
+        "a3" : "1",
+        "out" : "3 1"
+      }, {
+        "a1" : 4,
+        "a2" : 2,
+        "a3" : "5",
+        "out" : "4 2"
+      } ]
+    }
+  },
+  "errCol" : [ {
+    "errType" : "Initial",
+    "errCode" : "000",
+    "errMsg" : "ErrMsg",
+    "errCol" : "id",
+    "rawValues" : [ ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "4" ],
+    "mappings" : [ ]
+  } ]
+}, {
+  "struct3" : {
+    "inner3" : {
+      "array3" : [ {
+        "a1" : 4,
+        "a2" : 2,
+        "a3" : "3",
+        "out" : "4 2"
+      }, {
+        "a1" : 8,
+        "a2" : 2,
+        "a3" : "5",
+        "out" : "8 2"
+      } ]
+    }
+  },
+  "errCol" : [ {
+    "errType" : "Initial",
+    "errCode" : "000",
+    "errMsg" : "ErrMsg",
+    "errCol" : "id",
+    "rawValues" : [ ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "4" ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "8" ],
+    "mappings" : [ ]
+  } ]
+}, {
+  "struct3" : {
+    "inner3" : {
+      "array3" : [ {
+        "a1" : 5,
+        "a2" : 3,
+        "a3" : "4",
+        "out" : "5 3"
+      }, {
+        "a1" : 8,
+        "a2" : 4,
+        "a3" : "7",
+        "out" : "8 4"
+      } ]
+    }
+  },
+  "errCol" : [ {
+    "errType" : "Initial",
+    "errCode" : "000",
+    "errMsg" : "ErrMsg",
+    "errCol" : "id",
+    "rawValues" : [ ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "5" ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "8" ],
+    "mappings" : [ ]
+  } ]
+}, {
+  "struct3" : {
+    "inner3" : {
+      "array3" : [ {
+        "a1" : 6,
+        "a2" : 4,
+        "a3" : "6",
+        "out" : "6 4"
+      }, {
+        "a1" : 9,
+        "a2" : 3,
+        "a3" : "7",
+        "out" : "9 3"
+      } ]
+    }
+  },
+  "errCol" : [ {
+    "errType" : "Initial",
+    "errCode" : "000",
+    "errMsg" : "ErrMsg",
+    "errCol" : "id",
+    "rawValues" : [ ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "6" ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "9" ],
+    "mappings" : [ ]
+  } ]
+}, {
+  "struct3" : {
+    "inner3" : {
+      "array3" : [ {
+        "a1" : 7,
+        "a2" : 5,
+        "a3" : "7",
+        "out" : "7 5"
+      } ]
+    }
+  },
+  "errCol" : [ {
+    "errType" : "Initial",
+    "errCode" : "000",
+    "errMsg" : "ErrMsg",
+    "errCol" : "id",
+    "rawValues" : [ ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "7" ],
+    "mappings" : [ ]
+  } ]
+}, {
+  "struct3" : {
+    "inner3" : {
+      "array3" : [ {
+        "a1" : 4,
+        "a2" : 6,
+        "a3" : "5",
+        "out" : "4 6"
+      } ]
+    }
+  },
+  "errCol" : [ {
+    "errType" : "Initial",
+    "errCode" : "000",
+    "errMsg" : "ErrMsg",
+    "errCol" : "id",
+    "rawValues" : [ ],
+    "mappings" : [ ]
+  }, {
+    "errType" : "confCastError",
+    "errCode" : "E00003",
+    "errMsg" : "Conformance Error - Null returned by casting conformance rule",
+    "errCol" : "a1!==3",
+    "rawValues" : [ "4" ],
+    "mappings" : [ ]
+  } ]
+}, {
+  "struct3" : {
+    "inner3" : { }
+  },
+  "errCol" : [ {
+    "errType" : "Initial",
+    "errCode" : "000",
+    "errMsg" : "ErrMsg",
+    "errCol" : "id",
+    "rawValues" : [ ],
+    "mappings" : [ ]
+  } ]
+}, {
+  "struct3" : {
+    "inner3" : { }
+  },
+  "errCol" : [ {
+    "errType" : "Initial",
+    "errCode" : "000",
+    "errMsg" : "ErrMsg",
+    "errCol" : "id",
+    "rawValues" : [ ],
+    "mappings" : [ ]
+  } ]
+} ]
