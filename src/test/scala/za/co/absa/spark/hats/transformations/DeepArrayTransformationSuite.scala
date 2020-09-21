@@ -22,6 +22,7 @@ import org.scalatest.FunSuite
 import org.slf4j.LoggerFactory
 import za.co.absa.spark.hats.SparkTestBase
 import za.co.absa.spark.hats.transformations.samples.DeepArraySamples._
+import za.co.absa.spark.hats.transformations.samples.NestedMapTestCaseFactory
 
 // Examples for constructing dataframes containing arrays of various levels of nesting
 
@@ -37,6 +38,8 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
   import za.co.absa.spark.hats.Extensions._
 
   private val log = LoggerFactory.getLogger(this.getClass)
+
+  private val nestedWithMapCaseFactory = new NestedMapTestCaseFactory()
 
   test("Test uppercase of a plain field") {
     val df = spark.sparkContext.parallelize(plainSampleN).toDF
@@ -877,6 +880,37 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
     // This test will fail if the depth of a parent is calculated by the number of dots in a subfield,
     // but will succeed when such depth is calculated by parent field length.
     assert(splitByDeepestParent("a.b", Seq("", "a")) == ("a", "b"))
+  }
+
+  test("Test extended array transformations with an inner map") {
+    val expectedSchema =
+      """root
+        | |-- name: string (nullable = true)
+        | |-- addresses: array (nullable = true)
+        | |    |-- element: struct (containsNull = false)
+        | |    |    |-- city: string (nullable = true)
+        | |    |    |-- state: string (nullable = true)
+        | |    |    |-- planet: string (nullable = false)
+        | |-- properties: map (nullable = true)
+        | |    |-- key: string
+        | |    |-- value: string (valueContainsNull = true)
+        |""".stripMargin.replace("\r\n", "\n")
+    val expectedResults =
+      """{"name":"John","addresses":[{"city":"Newark","state":"NY","planet":"Earth"},{"city":"Brooklyn","state":"NY","planet":"Earth"}],"properties":{"hair":"black","eyes":"brown","height":"178"}}
+        |{"name":"Kate","addresses":[{"city":"San Jose","state":"CA","planet":"Earth"},{"city":"Sandiago","state":"CA","planet":"Earth"}],"properties":{"hair":"brown","eyes":"black","height":"165"}}
+        |{"name":"Michael","addresses":[{"city":"Sacramento","state":"CA","planet":"Earth"},{"city":"San Diego","state":"CA","planet":"Earth"}],"properties":{"white":"black","eyes":"black","height":"180"}}
+        |{"name":"Sarah","properties":{"hair":"blond","eyes":"red","height":"162"}}
+        |{"name":"William","addresses":[{"city":"Las Vegas","state":"NV","planet":"Earth"}],"properties":{"hair":"red","eye":"gray","height":"185"}}"""
+        .stripMargin.replace("\r\n", "\n")
+
+    val df = nestedWithMapCaseFactory.getTestCase
+    val dfOut = df.nestedWithColumn("addresses.planet", lit("Earth"))
+
+    val actualSchema = dfOut.schema.treeString
+    val actualResults = dfOut.toJSON.collect.mkString("\n")
+
+    assertSchema(actualSchema, expectedSchema)
+    assertResults(actualResults, expectedResults)
   }
 
   private def assertSchema(actualSchema: String, expectedSchema: String): Unit = {
