@@ -13,9 +13,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup Scala
-          uses: olafurpg/setup-scala@v10
-          with:
-            java-version: "adopt@1.8"
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
       - name: Build and run tests
         run: sbt ++2.11.12 test -DSPARK_VERSION=2.4.7
   build-scala-2_12-spark-2_4:
@@ -24,9 +24,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup Scala
-          uses: olafurpg/setup-scala@v10
-          with:
-            java-version: "adopt@1.8"
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
       - name: Build and run tests
         run: sbt ++2.12.12 test -DSPARK_VERSION=2.4.7
   build-scala-2_12-spark-3_0:
@@ -35,8 +35,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Setup Scala
-          uses: olafurpg/setup-scala@v10
-          with:
-            java-version: "adopt@1.8"
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
       - name: Build and run tests
         run: sbt ++2.12.12 test -DSPARK_VERSION=3.0.1
