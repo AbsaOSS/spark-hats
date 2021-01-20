@@ -1,0 +1,42 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build-scala-2_11-spark-2_4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
+      - name: Build and run tests
+        run: sbt ++2.11.12 test -DSPARK_VERSION=2.4.7
+  build-scala-2_12-spark-2_4:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
+      - name: Build and run tests
+        run: sbt ++2.12.12 test -DSPARK_VERSION=2.4.7
+  build-scala-2_12-spark-3_0:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Setup Scala
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: "adopt@1.8"
+      - name: Build and run tests
+        run: sbt ++2.12.12 test -DSPARK_VERSION=3.0.1

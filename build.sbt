@@ -29,9 +29,17 @@ ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation")
 // Scala shouldn't be packaged so it is explicitly added as a provided dependency below
 ThisBuild / autoScalaLibrary := false
 
+lazy val printSparkVersion = taskKey[Unit]("Print Spark version spark-cobol is building against.")
+
 lazy val hats = (project in file("."))
   .settings(
     name := "spark-hats",
+    printSparkVersion := {
+      val log = streams.value.log
+      log.info(s"Building with Spark $sparkVersion")
+      sparkVersion
+    },
+    (Compile / compile) := ((Compile / compile) dependsOn printSparkVersion).value,
     libraryDependencies ++= SparkHatsDependencies :+ getScalaDependency(scalaVersion.value),
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     Test / fork := true
