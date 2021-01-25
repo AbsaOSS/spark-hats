@@ -7,36 +7,24 @@ on:
     branches: [ master ]
 
 jobs:
-  build-scala-2_11-spark-2_4:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scala: [2.11.12, 2.12.12]
+        spark: [2.4.7, 3.0.1]
+        exclude:
+          - scala: 2.11.12
+            spark: 3.0.1
+    name: Test Spark ${{matrix.spark}} on Scala ${{matrix.scala}}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+      - uses: coursier/cache-action@v5
       - name: Setup Scala
         uses: olafurpg/setup-scala@v10
         with:
           java-version: "adopt@1.8"
       - name: Build and run tests
-        run: sbt ++2.11.12 test -DSPARK_VERSION=2.4.7
-  build-scala-2_12-spark-2_4:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Setup Scala
-        uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "adopt@1.8"
-      - name: Build and run tests
-        run: sbt ++2.12.12 test -DSPARK_VERSION=2.4.7
-  build-scala-2_12-spark-3_0:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Setup Scala
-        uses: olafurpg/setup-scala@v10
-        with:
-          java-version: "adopt@1.8"
-      - name: Build and run tests
-        run: sbt ++2.12.12 test -DSPARK_VERSION=3.0.1
+        run: sbt ++${{matrix.scala}} test -DSPARK_VERSION=${{matrix.spark}}

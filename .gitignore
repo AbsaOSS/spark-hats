@@ -35,3 +35,5 @@ build.log
 
 .cache*
 dependency-reduced-pom.xml
+
+.bsp
