@@ -1001,6 +1001,37 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
     assertResults(actualResults, expectedResults)
   }
 
+  test("Test unstruct within an array") {
+    val expectedSchema =
+      """root
+        | |-- name: string (nullable = true)
+        | |-- addresses: array (nullable = true)
+        | |    |-- element: struct (containsNull = false)
+        | |    |    |-- city: string (nullable = true)
+        | |    |    |-- state: string (nullable = true)
+        | |    |    |-- a: string (nullable = false)
+        | |    |    |-- b: string (nullable = false)
+        | |-- properties: map (nullable = true)
+        | |    |-- key: string
+        | |    |-- value: string (valueContainsNull = true)
+        |""".stripMargin.replace("\r\n", "\n")
+    val expectedResults =
+      """"""
+        .stripMargin.replace("\r\n", "\n")
+
+    val df = nestedWithMapCaseFactory.getTestCase
+      .nestedWithColumn("addresses.nested", struct(lit("a").as("a"), lit("b").as("b")).as("st"))
+
+    val dfOut = df
+     /*.nestedUnstruct(addresses.nested)*/
+
+//    val actualSchema = dfOut.schema.treeString
+//    val actualResults = dfOut.toJSON.collect.mkString("\n")
+//
+//    assertSchema(actualSchema, expectedSchema)
+//    assertResults(actualResults, expectedResults)
+  }
+
   private def assertSchema(actualSchema: String, expectedSchema: String): Unit = {
     if (actualSchema != expectedSchema) {
       log.error("EXPECTED:")
