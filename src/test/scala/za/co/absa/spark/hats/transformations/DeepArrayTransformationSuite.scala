@@ -1011,25 +1011,27 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
         | |    |    |-- state: string (nullable = true)
         | |    |    |-- a: string (nullable = false)
         | |    |    |-- b: string (nullable = false)
-        | |-- properties: map (nullable = true)
-        | |    |-- key: string
-        | |    |-- value: string (valueContainsNull = true)
         |""".stripMargin.replace("\r\n", "\n")
     val expectedResults =
-      """"""
+      """{"name":"John","addresses":[{"city":"Newark","state":"NY","a":"a","b":"b"},{"city":"Brooklyn","state":"NY","a":"a","b":"b"}]}
+        |{"name":"Kate","addresses":[{"city":"San Jose","state":"CA","a":"a","b":"b"},{"city":"Sandiago","state":"CA","a":"a","b":"b"}]}
+        |{"name":"Michael","addresses":[{"city":"Sacramento","state":"CA","a":"a","b":"b"},{"city":"San Diego","state":"CA","a":"a","b":"b"}]}
+        |{"name":"Sarah"}
+        |{"name":"William","addresses":[{"city":"Las Vegas","state":"NV","a":"a","b":"b"}]}"""
         .stripMargin.replace("\r\n", "\n")
 
     val df = nestedWithMapCaseFactory.getTestCase
       .nestedWithColumn("addresses.nested", struct(lit("a").as("a"), lit("b").as("b")).as("st"))
 
     val dfOut = df
-     /*.nestedUnstruct(addresses.nested)*/
+      .nestedUnstruct("addresses.nested")
+      .select("name", "addresses")
 
-//    val actualSchema = dfOut.schema.treeString
-//    val actualResults = dfOut.toJSON.collect.mkString("\n")
-//
-//    assertSchema(actualSchema, expectedSchema)
-//    assertResults(actualResults, expectedResults)
+    val actualSchema = dfOut.schema.treeString
+    val actualResults = dfOut.toJSON.collect.mkString("\n")
+
+    assertSchema(actualSchema, expectedSchema)
+    assertResults(actualResults, expectedResults)
   }
 
   private def assertSchema(actualSchema: String, expectedSchema: String): Unit = {
