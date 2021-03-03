@@ -323,6 +323,179 @@ object NestedArrayTransformations {
     nestedWithColumnMapHelper(df, columnToDrop, "")._1
   }
 
+
+  /**
+    * Moves all fields of the specified struct up one level. This can only be envoked on a struct inside other struct
+    *
+    * {{{
+    *   root
+    *    |-- a: struct
+    *    |    |-- b: struct
+    *    |    |    |-- c: string
+    *    |    |    |-- d: string
+    *
+    * df.nestedUnstruct("a.b")
+    *
+    *   root
+    *    |-- a: struct
+    *    |    |-- c: string
+    *    |    |-- d: string
+    * }}}
+    *
+    *
+    * @param columnToUnstruct  A struct column name that contains the fields to extract.
+    * @return A dataframe with the struct removed and its fields are up one level.
+    */
+  def nestedUnstruct(df: DataFrame,
+                     columnToUnstruct: String): DataFrame = {
+
+    val schema = df.schema
+    val path = columnToUnstruct.split('.')
+
+    // Sequential lambda name generator
+    var lambdaIndex = 1
+
+    def getLambdaName: String = {
+      val name = s"v$lambdaIndex"
+      lambdaIndex += 1
+      name
+    }
+
+    def mapStruct(schema: StructType,
+                  path: Seq[String],
+                  parentPath: String,
+                  arrCtx: ArrayContext,
+                  parentColumn: Option[Column] = None): Seq[Column] = {
+      val fieldName = path.head
+      val fieldPath = if (parentPath.isEmpty) fieldName else s"$parentPath.$fieldName"
+      val isLeaf = isLeafElement(path)
+      var fieldFound = false
+
+      def handleMatchedField(field: StructField,
+                             curColumn: Column,
+                             parentPath: String,
+                             arrCtx: ArrayContext,
+                             isLeaf: Boolean): Seq[Column] = {
+        if (isLeaf) {
+          handleMatchedLeaf(field, curColumn)
+        } else {
+          handleMatchedNonLeaf(field, curColumn, parentPath, arrCtx)
+        }
+      }
+
+      def handleMatchedLeaf(field: StructField,
+                            curColumn: Column
+                           ): Seq[Column] = {
+            field.dataType match {
+              case t: StructType =>
+                t.fields.map(fld => curColumn.getField(fld.name).as(fld.name))
+              case _ =>
+                throw new IllegalArgumentException(s"Not a struct type: $columnToUnstruct")
+            }
+        }
+
+      // Handle the case when the input column is inside a nested array
+      def mapArray(schema: ArrayType,
+                   path: Seq[String],
+                   parentPath: String,
+                   arrCtx: ArrayContext,
+                   parentColumn: Option[Column] = None,
+                   isParentArray: Boolean = false): Seq[Column] = {
+        val isLeaf = isLeafElement(path)
+        val lambdaName = getLambdaName
+        val fieldName = path.head
+        val mappedFields = new ListBuffer[Column]()
+
+        val curColumn = parentColumn match {
+          case None => new Column(fieldName)
+          case Some(col) if !isParentArray => col.getField(fieldName).as(fieldName)
+          case Some(col) if isParentArray => col
+        }
+
+        def handleNestedArray(dt: ArrayType,
+                              parentPath: String,
+                              arrCtx: ArrayContext): Column = {
+          // This is the case when the input field is a several nested arrays of arrays of...
+          // Each level of array nesting needs to be dealt with using transform()
+          val deepestType = SchemaUtils.getDeepestArrayType(dt)
+          deepestType match {
+            case _: StructType =>
+              // If at the bottom of the array nesting is a struct we need to add the output column
+              // as a field of that struct
+              // Example: if 'persons' is an array of array of structs having firstName and lastName,
+              //          fields, then 'conformedFirstName' needs to be a new field inside the struct
+              val innerArray = (x: Column) => mapArray(dt, path, parentPath, arrCtx, Some(x), isParentArray = true)
+              transform(curColumn, c => innerArray(c).head, lambdaName).as(fieldName)
+            case _ =>
+              throw new IllegalArgumentException(s"Not a struct field: $columnToUnstruct")
+          }
+        }
+
+        def handleNestedStruct(dt: StructType,
+                               parentPath: String,
+                               arrCtx: ArrayContext) = {
+          // If the leaf array element is struct we need to create the output field inside the struct itself.
+          // This is done by specifying "*" as a leaf field.
+          // If this struct is not a leaf element we just recursively call mapStruct() with child portion of the path.
+          val innerPath = if (isLeaf) Seq("*") else path.tail
+          transform(curColumn,
+            (x: Column) => struct(mapStruct(dt, innerPath, parentPath, arrCtx.withArraysUpdated(parentPath, x), Some(x)): _*),
+            lambdaName).as(fieldName)
+        }
+
+        val elemType = schema.elementType
+        val newColumn = elemType match {
+          case dt: StructType =>
+            handleNestedStruct(dt, parentPath, arrCtx)
+          case dt: ArrayType =>
+            handleNestedArray(dt, parentPath, arrCtx)
+          case _ =>
+            throw new IllegalArgumentException(s"Not a struct field: $columnToUnstruct")
+        }
+        if (newColumn == null) {
+          mappedFields
+        } else {
+          Seq(newColumn) ++ mappedFields
+        }
+      }
+
+      def handleMatchedNonLeaf(field: StructField,
+                               curColumn: Column,
+                               parentPath: String,
+                               arrCtx: ArrayContext
+                              ): Seq[Column] = {
+        // Non-leaf columns need to be further processed recursively
+        field.dataType match {
+          case dt: StructType => Seq(struct(mapStruct(dt, path.tail, parentPath, arrCtx, Some(curColumn)): _*).as(field.name))
+          case dt: ArrayType => mapArray(dt, path, parentPath, arrCtx, parentColumn)
+          case _ => throw new IllegalArgumentException(s"Field '${field.name}' is not a struct type or an array.")
+        }
+      }
+
+      val newColumns = schema.fields.flatMap(field => {
+        // This is the original column (struct field) we want to process
+        val curColumn = parentColumn match {
+          case None => new Column(field.name)
+          case Some(col) => col.getField(field.name).as(field.name)
+        }
+
+        if (field.name.compareToIgnoreCase(fieldName) != 0) {
+          // Copy unrelated fields as they were
+          Seq(curColumn)
+        } else {
+          // We have found a match
+          fieldFound = true
+          handleMatchedField(field, curColumn, fieldPath, arrCtx, isLeaf)
+        }
+      })
+
+      newColumns
+    }
+
+    df.select(mapStruct(schema, path, "", new ArrayContext): _*)
+  }
+
+
   // scalastyle:off method.length
   // scalastyle:off null
   /**

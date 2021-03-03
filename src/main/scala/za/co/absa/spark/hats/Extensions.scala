@@ -16,6 +16,7 @@
 
 package za.co.absa.spark.hats
 
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{Column, DataFrame, Dataset, Row}
 import za.co.absa.spark.hats.transformations.NestedArrayTransformations
 
@@ -88,6 +89,32 @@ object Extensions {
                         outputColumnName: String,
                         expression: TransformFunction): DataFrame = {
       NestedArrayTransformations.nestedWithColumnMap(dataset, inputColumnName, outputColumnName, expression)
+    }
+
+    /**
+      * Moves all fields of the specified struct up one level. This can only be envoked on a struct inside other struct
+      *
+      * {{{
+      *   root
+      *    |-- a: struct
+      *    |    |-- b: struct
+      *    |    |    |-- c: string
+      *    |    |    |-- d: string
+      *
+      * df.nestedUnstruct("a.b")
+      *
+      *   root
+      *    |-- a: struct
+      *    |    |-- c: string
+      *    |    |-- d: string
+      * }}}
+      *
+      *
+      * @param inputColumnName  A struct column name that contains the fields to extract.
+      * @return A dataframe with the struct removed and its fields are up one level.
+      */
+    def nestedUnstruct(inputColumnName: String): DataFrame = {
+      NestedArrayTransformations.nestedUnstruct(dataset, inputColumnName)
     }
 
   }
