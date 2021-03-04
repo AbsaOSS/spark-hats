@@ -219,6 +219,39 @@ scala> df.nestedMapColumn(inputColumnName = "my_array.a", outputColumnName = "c"
 +---+---------------------------------------+
 ```
 
+## Other transformations
+
+### Unstruct
+
+Syntax: `df.nestedUnstruct("NestedStructColumnName")`.
+
+Flattens one level of nesting when a struct is nested in another struct. For example,
+
+```scala
+scala> df.printSchema
+root
+|-- id: long (nullable = true)
+|-- my_array: array (nullable = true)
+|    |-- element: struct (containsNull = true)
+|    |    |-- a: long (nullable = true)
+|    |    |-- b: string (nullable = true)
+|    |    |-- c: struct (containsNull = true)
+|    |    |    |--nestedField1: string (nullable = true)
+|    |    |    |--nestedField2: long (nullable = true)
+
+scala> df.nestedUnstruct("my_array.c").printSchema
+root
+|-- id: long (nullable = true)
+|-- my_array: array (nullable = true)
+|    |-- element: struct (containsNull = true)
+|    |    |-- a: long (nullable = true)
+|    |    |-- b: string (nullable = true)
+|    |    |-- nestedField1: string (nullable = true)
+|    |    |-- nestedField2: long (nullable = true)
+```
+
+Note that the output schema doesn't have the `c` struct. All fields of `c` are now part of the parent struct. 
+
 ## Changelog
 - #### 0.2.1 released 21 January 2020.
   - [#10](https://github.com/AbsaOSS/spark-hats/issues/10) Fixed error column aggregation when the input array is `null`.
