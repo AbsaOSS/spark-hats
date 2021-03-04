@@ -1001,6 +1001,87 @@ class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
     assertResults(actualResults, expectedResults)
   }
 
+  test("Test unstruct on the root level") {
+    val expectedSchema =
+      """root
+        | |-- id: integer (nullable = false)
+        | |-- name: string (nullable = true)
+        | |-- address: struct (nullable = true)
+        | |    |-- city: string (nullable = true)
+        | |    |-- street: string (nullable = true)
+        |""".stripMargin.replace("\r\n", "\n")
+    val expectedResults =
+      """{"id":1,"name":"Martin","address":{"city":"Olomuc","street":"Vodickova"}}
+        |{"id":1,"name":"Petr","address":{"city":"Ostrava","street":"Vlavska"}}
+        |{"id":1,"name":"Vojta","address":{"city":"Plzen","street":"Kralova"}}"""
+        .stripMargin.replace("\r\n", "\n")
+
+    val df = spark.sparkContext.parallelize(structOfStructSampleN).toDF
+
+    val dfOut = df
+      .nestedUnstruct("employee")
+
+    val actualSchema = dfOut.schema.treeString
+    val actualResults = dfOut.toJSON.collect.mkString("\n")
+
+    assertSchema(actualSchema, expectedSchema)
+    assertResults(actualResults, expectedResults)
+  }
+
+  test("Test unstruct on the nested level") {
+    val expectedSchema =
+      """root
+        | |-- id: integer (nullable = false)
+        | |-- employee: struct (nullable = false)
+        | |    |-- name: string (nullable = true)
+        | |    |-- city: string (nullable = true)
+        | |    |-- street: string (nullable = true)
+        |""".stripMargin.replace("\r\n", "\n")
+    val expectedResults =
+      """{"id":1,"employee":{"name":"Martin","city":"Olomuc","street":"Vodickova"}}
+        |{"id":1,"employee":{"name":"Petr","city":"Ostrava","street":"Vlavska"}}
+        |{"id":1,"employee":{"name":"Vojta","city":"Plzen","street":"Kralova"}}"""
+        .stripMargin.replace("\r\n", "\n")
+
+    val df = spark.sparkContext.parallelize(structOfStructSampleN).toDF
+
+    val dfOut = df
+      .nestedUnstruct("employee.address")
+
+    val actualSchema = dfOut.schema.treeString
+    val actualResults = dfOut.toJSON.collect.mkString("\n")
+
+    assertSchema(actualSchema, expectedSchema)
+    assertResults(actualResults, expectedResults)
+  }
+
+  test("Test unstruct 2 times") {
+    val expectedSchema =
+      """root
+        | |-- id: integer (nullable = false)
+        | |-- name: string (nullable = true)
+        | |-- city: string (nullable = true)
+        | |-- street: string (nullable = true)
+        |""".stripMargin.replace("\r\n", "\n")
+    val expectedResults =
+      """{"id":1,"name":"Martin","city":"Olomuc","street":"Vodickova"}
+        |{"id":1,"name":"Petr","city":"Ostrava","street":"Vlavska"}
+        |{"id":1,"name":"Vojta","city":"Plzen","street":"Kralova"}"""
+        .stripMargin.replace("\r\n", "\n")
+
+    val df = spark.sparkContext.parallelize(structOfStructSampleN).toDF
+
+    val dfOut = df
+      .nestedUnstruct("employee.address")
+      .nestedUnstruct("employee")
+
+    val actualSchema = dfOut.schema.treeString
+    val actualResults = dfOut.toJSON.collect.mkString("\n")
+
+    assertSchema(actualSchema, expectedSchema)
+    assertResults(actualResults, expectedResults)
+  }
+
   test("Test unstruct within an array") {
     val expectedSchema =
       """root
