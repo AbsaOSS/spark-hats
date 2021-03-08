@@ -14,7 +14,7 @@ Reference the library
 ```
 groupId: za.co.absa
 artifactId: spark-hats_2.11
-version: 0.2.1
+version: 0.2.2
 ```
 
 ### Scala 2.12 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12)
@@ -22,7 +22,7 @@ version: 0.2.1
 ```
 groupId: za.co.absa
 artifactId: spark-hats_2.12
-version: 0.2.1
+version: 0.2.2
 ```
 
 Please, use the table below to determine what version of spark-hats to use for Spark compatibility.
@@ -253,6 +253,9 @@ root
 Note that the output schema doesn't have the `c` struct. All fields of `c` are now part of the parent struct. 
 
 ## Changelog
+- #### 0.2.2 released 8 March 2021.
+  - [#23](https://github.com/AbsaOSS/spark-hats/issues/23) Added `nestedUnstruct()` method that flattens one level of nesting for a given struct.
+
 - #### 0.2.1 released 21 January 2020.
   - [#10](https://github.com/AbsaOSS/spark-hats/issues/10) Fixed error column aggregation when the input array is `null`.
   
