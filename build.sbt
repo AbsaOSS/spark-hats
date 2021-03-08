@@ -43,7 +43,7 @@ lazy val hats = (project in file("."))
     libraryDependencies ++= SparkHatsDependencies :+ getScalaDependency(scalaVersion.value),
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     Test / fork := true
-  )
+  ).enablePlugins(AutomateHeaderPlugin)
 
 // release settings
 releaseCrossBuild := true
