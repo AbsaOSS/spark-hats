@@ -35,7 +35,7 @@ ThisBuild / developers := List(
 
 ThisBuild / homepage := Some(url("https://github.com/AbsaOSS/spark-hats"))
 ThisBuild / description := "Spark extensions for working with nested arrays and structs"
-ThisBuild / startYear := Some(2019)
+ThisBuild / startYear := Some(2020)
 ThisBuild / licenses += "Apache-2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt")
 
 ThisBuild / pomIncludeRepository := { _ => false }
