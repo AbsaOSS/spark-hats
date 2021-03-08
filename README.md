@@ -1,4 +1,5 @@
 # spark-hats
+[![Build](https://github.com/AbsaOSS/spark-hats/workflows/Build/badge.svg)](https://github.com/AbsaOSS/spark-hats/actions)
 
 Spark "**H**elpers for **A**rray **T**ransformation**s**"
 
