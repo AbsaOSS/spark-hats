@@ -40,7 +40,7 @@ import za.co.absa.spark.hats.Extensions._
 
 ## Motivation
 
-Here is a small example we will use to show you how `spark-hats` work. The important hthing is that the dataframe
+Here is a small example we will use to show you how `spark-hats` work. The important thing is that the dataframe
 contains an array of struct fields.
 
 ```scala
