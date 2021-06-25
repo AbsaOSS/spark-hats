@@ -18,7 +18,7 @@ import sbt._
 
 object Dependencies {
 
-  def sparkVersion: String = sys.props.getOrElse("SPARK_VERSION", "2.4.7")
+  def sparkVersion: String = sys.props.getOrElse("SPARK_VERSION", "2.4.8")
   private val sparkHofsVersion = "0.4.0"
 
   private val scalatestVersion = "3.0.3"
