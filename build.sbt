@@ -17,7 +17,7 @@
 import Dependencies._
 
 val scala211 = "2.11.12"
-val scala212 = "2.12.10"
+val scala212 = "2.12.14"
 
 ThisBuild / organization := "za.co.absa"
 

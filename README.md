@@ -32,6 +32,7 @@ Please, use the table below to determine what version of spark-hats to use for S
 |:------------------:|:-------------:|:---------------:|
 |       0.1.x        |  2.11, 2.12   |     2.4.3+      |
 |       0.2.x        |  2.11, 2.12   |     2.4.3+      |
+|       0.2.x        |  2.12         |     3.0.0+      |
 
 To use the extensions you need to add this import to your Spark application or shell:
 ```scala
