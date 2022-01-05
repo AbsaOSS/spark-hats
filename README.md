@@ -1,5 +1,6 @@
 # spark-hats
 [![Build](https://github.com/AbsaOSS/spark-hats/workflows/Build/badge.svg)](https://github.com/AbsaOSS/spark-hats/actions)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FAbsaOSS%2Fspark-hats.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2FAbsaOSS%2Fspark-hats?ref=badge_shield)
 
 Spark "**H**elpers for **A**rray **T**ransformation**s**"
 
@@ -263,3 +264,7 @@ Note that the output schema doesn't have the `c` struct. All fields of `c` are n
   
 - #### 0.2.0 released 16 January 2020.
   - [#5](https://github.com/AbsaOSS/spark-hats/issues/5) Added the extended nested transformation API that allows referencing arbitrary columns.
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2FAbsaOSS%2Fspark-hats.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2FAbsaOSS%2Fspark-hats?ref=badge_large)
