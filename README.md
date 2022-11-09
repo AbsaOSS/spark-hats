@@ -40,6 +40,16 @@ To use the extensions you need to add this import to your Spark application or s
 import za.co.absa.spark.hats.Extensions._
 ```
 
+### How to generate Code coverage report
+```sbt
+sbt jacoco
+```
+Code coverage will be generated on path:
+```
+{local-path}\spark-hats\target\scala-2.XY\jacoco\report\html
+```
+
+
 ## Motivation
 
 Here is a small example we will use to show you how `spark-hats` work. The important thing is that the dataframe

@@ -48,3 +48,17 @@ lazy val hats = (project in file("."))
 // release settings
 releaseCrossBuild := true
 addCommandAlias("releaseNow", ";set releaseVersionBump := sbtrelease.Version.Bump.Bugfix; release with-defaults")
+
+// JaCoCo code coverage
+Test / jacocoReportSettings := JacocoReportSettings(
+  s"spark-hats Jacoco Report - ${scalaVersion.value}",
+  None,
+  JacocoThresholds(),
+  Seq(JacocoReportFormats.HTML, JacocoReportFormats.XML),
+  "utf-8")
+
+// exclude example
+Test / jacocoExcludes := Seq(
+//  "za.co.absa.spark.hats.transformations.NestedArrayTransformation*", // class and related objects
+//  "za.co.absa.spark.hats.transformations.ArrayContext" // class only
+)
