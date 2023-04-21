@@ -41,8 +41,8 @@ import za.co.absa.spark.hats.Extensions._
 ```
 
 ### How to generate Code coverage report
-```sbt
-sbt jacoco
+```
+sbt ++{matrix.scala} jacoco -DSPARK_VERSION={matrix.spark}
 ```
 Code coverage will be generated on path:
 ```
