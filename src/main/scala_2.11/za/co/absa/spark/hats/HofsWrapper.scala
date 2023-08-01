@@ -21,7 +21,9 @@ import org.apache.spark.sql.Column
 import za.co.absa.spark.hofs.{transform => hofsTransform}
 
 /**
-  * This is a wrapper for high order functions depending on Scala version
+  * This is a wrapper for high order functions depending on Scala version.
+  *
+  * This implementation uses Hofs(https://github.com/AbsaOSS/spark-hofs).
   */
 object HofsWrapper {
   /**

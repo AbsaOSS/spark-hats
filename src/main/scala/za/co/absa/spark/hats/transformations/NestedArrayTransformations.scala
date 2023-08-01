@@ -453,7 +453,7 @@ object NestedArrayTransformations {
             throw new IllegalArgumentException(s"Not a struct field: $columnToUnstruct")
         }
         if (newColumn == null) {
-          mappedFields
+          mappedFields.toSeq
         } else {
           Seq(newColumn) ++ mappedFields
         }
@@ -848,7 +848,7 @@ object NestedArrayTransformations {
           handlePrimitive(dt, transformExpression, errorExpression, parentPath, arrCtx)
       }
       if (newColumn == null) {
-        mappedFields
+        mappedFields.toSeq
       } else {
         Seq(newColumn) ++ mappedFields
       }
