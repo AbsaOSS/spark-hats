@@ -17,12 +17,13 @@
 import Dependencies._
 
 val scala211 = "2.11.12"
-val scala212 = "2.12.14"
+val scala212 = "2.12.18"
+val scala213 = "2.13.11"
 
 ThisBuild / organization := "za.co.absa"
 
-ThisBuild / scalaVersion := scala211
-ThisBuild / crossScalaVersions := Seq(scala211, scala212)
+ThisBuild / scalaVersion := scala212
+ThisBuild / crossScalaVersions := Seq(scala211, scala212, scala213)
 
 ThisBuild / scalacOptions := Seq("-unchecked", "-deprecation")
 
@@ -36,11 +37,21 @@ lazy val hats = (project in file("."))
     name := "spark-hats",
     printSparkVersion := {
       val log = streams.value.log
-      log.info(s"Building with Spark $sparkVersion")
-      sparkVersion
+      val effectiveSparkVersion = sparkVersion(scalaVersion.value)
+      log.info(s"Building with Spark $effectiveSparkVersion")
+      effectiveSparkVersion
     },
-    (Compile / compile) := ((Compile / compile) dependsOn printSparkVersion).value,
-    libraryDependencies ++= SparkHatsDependencies :+ getScalaDependency(scalaVersion.value),
+    Compile / compile := ((Compile / compile) dependsOn printSparkVersion).value,
+    Compile / unmanagedSourceDirectories += {
+      val sourceDir = (Compile / sourceDirectory).value
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, n)) if n == 11 => sourceDir / "scala_2.11"
+        case Some((2, n)) if n == 12 => sourceDir / "scala_2.12"
+        case Some((2, n)) if n == 13 => sourceDir / "scala_2.13"
+        case _ => throw new RuntimeException("Unsupported Scala version")
+      }
+    },
+    libraryDependencies ++= getSparkHatsDependencies(scalaVersion.value) ++ getHofsDependency(scalaVersion.value) :+ getScalaDependency(scalaVersion.value),
     releasePublishArtifactsAction := PgpKeys.publishSigned.value,
     Test / fork := true
   ).enablePlugins(AutomateHeaderPlugin)

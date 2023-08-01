@@ -18,24 +18,42 @@ import sbt._
 
 object Dependencies {
 
-  def sparkVersion: String = sys.props.getOrElse("SPARK_VERSION", "2.4.8")
-  private val sparkHofsVersion = "0.4.0"
+  val defaultSparkVersionForScala211 = "2.4.8"
+  val defaultSparkVersionForScala212 = "3.3.2"
+  val defaultSparkVersionForScala213 = "3.4.1"
 
-  private val scalatestVersion = "3.0.3"
+  private val sparkHofsVersion = "0.4.0"
+  private val scalatestVersion = "3.2.14"
 
   def getScalaDependency(scalaVersion: String): ModuleID = "org.scala-lang" % "scala-library" % scalaVersion % Provided
 
-  val SparkHatsDependencies: Seq[ModuleID] = Seq(
-    // compile
-    "za.co.absa" %% "spark-hofs" % sparkHofsVersion,
-
+  def getSparkHatsDependencies(scalaVersion: String): Seq[ModuleID] = Seq(
     // provided
-    "org.apache.spark" %% "spark-core"       % sparkVersion % Provided,
-    "org.apache.spark" %% "spark-sql"        % sparkVersion % Provided,
-    "org.apache.spark" %% "spark-catalyst"   % sparkVersion % Provided,
+    "org.apache.spark" %% "spark-core"       % sparkVersion(scalaVersion) % Provided,
+    "org.apache.spark" %% "spark-sql"        % sparkVersion(scalaVersion) % Provided,
+    "org.apache.spark" %% "spark-catalyst"   % sparkVersion(scalaVersion) % Provided,
 
     // test
     "org.scalatest" %% "scalatest" % scalatestVersion % Test
   )
 
+  def getHofsDependency(scalaVersion: String): Seq[ModuleID] = if (scalaVersion.startsWith("2.11.")) {
+    Seq("za.co.absa" %% "spark-hofs" % sparkHofsVersion)
+  } else {
+    Seq.empty
+  }
+
+  def sparkVersion(scalaVersion: String): String = sys.props.getOrElse("SPARK_VERSION", sparkFallbackVersion(scalaVersion))
+
+  def sparkFallbackVersion(scalaVersion: String): String = {
+    if (scalaVersion.startsWith("2.11.")) {
+      defaultSparkVersionForScala211
+    } else if (scalaVersion.startsWith("2.12.")) {
+      defaultSparkVersionForScala212
+    } else if (scalaVersion.startsWith("2.13.")) {
+      defaultSparkVersionForScala213
+    } else {
+      throw new IllegalArgumentException(s"Scala $scalaVersion not supported.")
+    }
+  }
 }
