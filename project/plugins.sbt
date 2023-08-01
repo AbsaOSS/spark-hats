@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-addSbtPlugin("com.jsuereth"      % "sbt-pgp"       % "2.0.0")
-addSbtPlugin("com.github.gseitz" % "sbt-release"   % "1.0.12")
-addSbtPlugin("de.heikoseeberger" % "sbt-header"    % "5.6.0")
+addSbtPlugin("com.github.sbt"    % "sbt-pgp"       % "2.2.1")
+addSbtPlugin("com.github.sbt"    % "sbt-release"   % "1.1.0")
+addSbtPlugin("de.heikoseeberger" % "sbt-header"    % "5.7.0")
 
 // sbt-jacoco - workaround related dependencies required to download
 lazy val ow2Version = "9.5"
