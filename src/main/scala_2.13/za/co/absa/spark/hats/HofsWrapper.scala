@@ -16,10 +16,13 @@
 
 package za.co.absa.spark.hats
 
-import org.apache.spark.sql.{Column, functions => sparkTransform}
+import org.apache.spark.sql.Column
+import org.apache.spark.sql.functions.{transform => sparkTransform}
 
 /**
-  * This is a wrapper for high order functions depending on Scala version
+  * This is a wrapper for high order functions depending on Scala version.
+  *
+  * This implementation uses native Spark transform().
   */
 object HofsWrapper {
   /**
