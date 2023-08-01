@@ -32,9 +32,14 @@ jobs:
             spark: 2.4.8
             overall: 0.0
             changed: 80.0
-          - scala: 2.12.15
+          - scala: 2.12.18
             scalaShort: "2.12"
-            spark: 2.4.8
+            spark: 3.2.4
+            overall: 0.0
+            changed: 80.0
+          - scala: 2.13.11
+            scalaShort: "2.13"
+            spark: 3.4.1
             overall: 0.0
             changed: 80.0
     name: Check code-coverage by JaCoCo - Spark ${{matrix.spark}} on Scala ${{matrix.scala}}
