@@ -18,7 +18,7 @@ package za.co.absa.spark.hats.transformations
 
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types.StringType
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import org.slf4j.LoggerFactory
 import za.co.absa.spark.hats.SparkTestBase
 import za.co.absa.spark.hats.transformations.samples.DeepArraySamples._
@@ -30,7 +30,7 @@ import za.co.absa.spark.hats.transformations.samples.NestedMapTestCaseFactory
 // It is declared package private so the names won't pollute public/exported namespace
 
 
-class DeepArrayTransformationSuite extends FunSuite with SparkTestBase {
+class DeepArrayTransformationSuite extends AnyFunSuite with SparkTestBase {
   // scalastyle:off line.size.limit
   // scalastyle:off null
 
