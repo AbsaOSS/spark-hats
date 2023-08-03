@@ -39,12 +39,13 @@ Reference the library
 
 Please, use the table below to determine what version of spark-hats to use for Spark compatibility.
 
-| spark-hats version | Scala version |  Spark version  |
-|:------------------:|:-------------:|:---------------:|
-|       0.1.x        |  2.11, 2.12   |     2.4.3+      |
-|       0.2.x        |  2.11, 2.12   |     2.4.3+      |
-|       0.2.x        |     2.12      |     3.0.0+      |
-|       0.3.x        |  2.12, 2.13   |     3.0.0+      |
+| spark-hats version | Scala version | Spark version |
+|:------------------:|:-------------:|:-------------:|
+|       0.1.x        |  2.11, 2.12   |    2.4.3+     |
+|       0.2.x        |  2.11, 2.12   |    2.4.3+     |
+|       0.2.x        |     2.12      |    3.0.0+     |
+|       0.3.x        |     2.11      |    2.4.3+     |
+|       0.3.x        |  2.12, 2.13   |    3.2.1+     |
 
 To use the extensions you need to add this import to your Spark application or shell:
 ```scala
