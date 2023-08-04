@@ -11,29 +11,41 @@ arbitrary levels of nesting.
 
 Reference the library
 
-### Scala 2.11 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.11)
-
-```
-groupId: za.co.absa
-artifactId: spark-hats_2.11
-version: 0.2.2
-```
-
-### Scala 2.12 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12/badge.svg)](https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12)
-
-```
-groupId: za.co.absa
-artifactId: spark-hats_2.12
-version: 0.2.2
-```
+<table>
+<tr><th>Scala 2.11</th><th>Scala 2.12</th><th>Scala 2.13</th></tr>
+<tr>
+<td align="center">
+<a href = "https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.11"><img src = "https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.11/badge.svg" alt="Maven Central"></a><br>
+</td>
+<td align="center">
+<a href = "https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12"><img src = "https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.12/badge.svg" alt="Maven Central"></a><br>
+</td>
+<td align="center">
+<a href = "https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.13"><img src = "https://maven-badges.herokuapp.com/maven-central/za.co.absa/spark-hats_2.13/badge.svg" alt="Maven Central"></a><br>
+</td>
+</tr>
+<tr>
+<td>
+<pre>groupId: za.co.absa<br>artifactId: spark-hats_2.11<br>version: 0.3.0</pre>
+</td>
+<td>
+<pre>groupId: za.co.absa<br>artifactId: spark-hats_2.12<br>version: 0.3.0</pre>
+</td>
+<td>
+<pre>groupId: za.co.absa<br>artifactId: spark-hats_2.13<br>version: 0.3.0</pre>
+</td>
+</tr>
+</table>
 
 Please, use the table below to determine what version of spark-hats to use for Spark compatibility.
 
-| spark-hats version | Scala version |  Spark version  |
-|:------------------:|:-------------:|:---------------:|
-|       0.1.x        |  2.11, 2.12   |     2.4.3+      |
-|       0.2.x        |  2.11, 2.12   |     2.4.3+      |
-|       0.2.x        |  2.12         |     3.0.0+      |
+| spark-hats version | Scala version | Spark version |
+|:------------------:|:-------------:|:-------------:|
+|       0.1.x        |  2.11, 2.12   |    2.4.3+     |
+|       0.2.x        |  2.11, 2.12   |    2.4.3+     |
+|       0.2.x        |     2.12      |    3.0.0+     |
+|       0.3.x        |     2.11      |    2.4.3+     |
+|       0.3.x        |  2.12, 2.13   |    3.2.1+     |
 
 To use the extensions you need to add this import to your Spark application or shell:
 ```scala
