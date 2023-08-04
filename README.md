@@ -278,6 +278,14 @@ root
 Note that the output schema doesn't have the `c` struct. All fields of `c` are now part of the parent struct. 
 
 ## Changelog
+- #### 0.3.0 released 3 August 2023.
+  - [#38](https://github.com/AbsaOSS/spark-hats/issues/38) Add scala 2.13 support by @yruslan in https://github.com/AbsaOSS/spark-hats/pull/43
+  - [#33](https://github.com/AbsaOSS/spark-hats/issues/33) Update spark test to 3.2.1 by @Zejnilovic in https://github.com/AbsaOSS/spark-hats/pull/34
+  - [#35](https://github.com/AbsaOSS/spark-hats/issues/35) Add code coverage support by @miroslavpojer in https://github.com/AbsaOSS/spark-hats/pull/36, https://github.com/AbsaOSS/spark-hats/pull/37
+  - Update Header Licenses by @Zejnilovic in https://github.com/AbsaOSS/spark-hats/pull/27
+  - Fix Typo in README.md by @raffael-dzikowski in https://github.com/AbsaOSS/spark-hats/pull/28
+  - Update Scala and Spark build versions by @yruslan in https://github.com/AbsaOSS/spark-hats/pull/30
+
 - #### 0.2.2 released 8 March 2021.
   - [#23](https://github.com/AbsaOSS/spark-hats/issues/23) Added `nestedUnstruct()` method that flattens one level of nesting for a given struct.
 
